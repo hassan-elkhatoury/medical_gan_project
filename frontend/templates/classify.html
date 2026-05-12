@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="row g-4 align-items-start">
+  <div class="col-lg-5">
+    <h1 class="h3 mb-3">Classify a Lesion Image</h1>
+    {% if error %}
+      <div class="alert alert-warning">{{ error }}</div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" class="panel">
+      <label for="image" class="form-label">Dermoscopic image</label>
+      <input id="image" name="image" type="file" accept="image/*" class="form-control mb-3" required>
+      <button type="submit" class="btn btn-primary w-100">Run Classification</button>
+    </form>
+  </div>
+
+  <div class="col-lg-7">
+    {% if preview %}
+      <img src="{{ preview }}" alt="Uploaded lesion preview" class="preview-image mb-3">
+    {% endif %}
+
+    {% if result %}
+      <div class="result-heading mb-3">
+        <span class="text-muted">Predicted class</span>
+        <strong>{{ result.prediction }}</strong>
+      </div>
+      <div class="panel">
+        {% for item in result.probabilities %}
+          <div class="probability-row">
+            <span>{{ item.class_name }}</span>
+            <div class="progress">
+              <div class="progress-bar" style="width: {{ '%.2f'|format(item.probability * 100) }}%"></div>
+            </div>
+            <span class="probability-value">{{ '%.1f'|format(item.probability * 100) }}%</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">Upload an image to view class probabilities.</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="row g-4 align-items-start">
+  <div class="col-lg-4">
+    <h1 class="h3 mb-3">Generate Synthetic Samples</h1>
+    {% if error %}
+      <div class="alert alert-warning">{{ error }}</div>
+    {% endif %}
+    <form method="post" class="panel">
+      <label for="class_name" class="form-label">Lesion class</label>
+      <select id="class_name" name="class_name" class="form-select mb-3">
+        <option value="all" {% if selected_class == "all" %}selected{% endif %}>All classes</option>
+        {% for class_name in class_names %}
+          <option value="{{ class_name }}" {% if selected_class == class_name %}selected{% endif %}>{{ class_name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary w-100">Refresh Samples</button>
+    </form>
+  </div>
+
+  <div class="col-lg-8">
+    {% if image_url %}
+      <img src="{{ image_url }}?v={{ range(1, 1000000) | random }}" alt="Generated dermoscopic image grid" class="sample-grid">
+    {% else %}
+      <div class="empty-state">Generate a grid to inspect the current GAN checkpoint.</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
