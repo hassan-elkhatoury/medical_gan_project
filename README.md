@@ -1,93 +1,71 @@
-# HAM10000 DCGAN and Classifier
+# Medical GAN Project
 
-This project downloads HAM10000, prepares train/test folders, trains a class-conditional DCGAN, generates class-organized synthetic dermoscopic images, trains a CNN classifier with real plus synthetic images, and serves both models through Flask.
+This project trains a conditional DCGAN for HAM10000 skin-lesion image generation, trains a CNN classifier, and serves both through a local Flask app.
 
-## Environment
+## Run Locally
 
-Use Python 3.10, 3.11, or 3.12 for the smoothest PyTorch install experience.
+Create the environment:
 
-```powershell
+```bash
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
 ```
 
-If you need a CUDA-specific PyTorch wheel, install the matching command from the PyTorch website first, then run the remaining requirements.
+Required trained files:
 
-## Dataset
+```text
+checkpoints/ham10000_dcgan.pth
+checkpoints/skin_classifier.pth
+```
 
-Place your Kaggle API token at `%USERPROFILE%\.kaggle\kaggle.json` or set `KAGGLE_USERNAME` and `KAGGLE_KEY`.
+Start Flask:
 
-```powershell
+```bash
+.venv/bin/flask --app frontend/app.py run --host 127.0.0.1 --port 5000
+```
+
+Open:
+
+```text
+http://127.0.0.1:5000/classify
+http://127.0.0.1:5000/generate
+```
+
+## Train Or Change The Models
+
+Download and prepare HAM10000:
+
+```bash
 python download_dataset.py --output_dir data/ham10000_raw
 python prepare_dataset.py --raw_dir data/ham10000_raw --output_dir data/ham10000 --test_size 0.2 --overwrite
 ```
 
-Prepared data will be written to:
+Train the GAN:
 
-```text
-data/ham10000/train/<class_name>/*.jpg
-data/ham10000/test/<class_name>/*.jpg
+```bash
+python train_gan.py --train_dir data/ham10000/train --epochs 50 --batch_size 32 --image_size 64 --num_workers 2
 ```
 
-## Train Models
+Generate synthetic images:
 
-Train the conditional DCGAN:
-
-```powershell
-python train_gan.py --train_dir data/ham10000/train --epochs 50 --batch_size 64 --image_size 128
+```bash
+python generate_synthetic.py --checkpoint checkpoints/ham10000_dcgan.pth --match_real_dir data/ham10000/train --out_dir synthetic_images --samples_per_class 20 --batch_size 16
 ```
 
-Generate synthetic images, matching the number of real training images per class:
+Train the classifier:
 
-```powershell
-python generate_synthetic.py --checkpoint checkpoints/ham10000_dcgan.pth --match_real_dir data/ham10000/train --out_dir synthetic_images
+```bash
+python train_classifier.py --real_train_dir data/ham10000/train --synthetic_train_dir synthetic_images --test_dir data/ham10000/test --epochs 20 --batch_size 32 --num_workers 2
 ```
 
-Train the augmented classifier:
+## What To Change
 
-```powershell
-python train_classifier.py --real_train_dir data/ham10000/train --synthetic_train_dir synthetic_images --test_dir data/ham10000/test --epochs 20
-```
+- Better generated images: increase `--epochs` in `train_gan.py`.
+- Faster experiments: keep `--image_size 64` and smaller `--batch_size`.
+- Better quality experiments: use more GAN epochs, then replace `checkpoints/ham10000_dcgan.pth`.
+- Better classifier results: retrain `train_classifier.py`, then replace `checkpoints/skin_classifier.pth`.
+- Different Flask port: change `--port 5000` in the run command.
 
-Train a baseline without synthetic images:
-
-```powershell
-python train_classifier.py --real_train_dir data/ham10000/train --synthetic_train_dir none --test_dir data/ham10000/test --out_name baseline_classifier.pth --epochs 20
-```
-
-Evaluate a saved classifier:
-
-```powershell
-python evaluate.py --checkpoint checkpoints/skin_classifier.pth --test_dir data/ham10000/test
-```
-
-## Outputs
-
-The scripts create these main artifacts:
-
-```text
-checkpoints/ham10000_dcgan.pth
-checkpoints/generator.pth
-checkpoints/skin_classifier.pth
-skin_classifier.pth
-generated_samples/
-synthetic_images/
-checkpoints/*_metrics.json
-checkpoints/*_history.json
-```
-
-## Frontend
-
-Run the Flask app after the checkpoints are trained:
-
-```powershell
-$env:FLASK_APP = "frontend/app.py"
-flask run --host 127.0.0.1 --port 5000
-```
-
-Open [http://127.0.0.1:5000/classify](http://127.0.0.1:5000/classify) to upload an image for classification, or [http://127.0.0.1:5000/generate](http://127.0.0.1:5000/generate) to refresh synthetic sample grids.
-
-The app selects CUDA when available and falls back to CPU automatically.
+If a checkpoint is missing, the Flask app shows the missing-file error so you know what to fix.
