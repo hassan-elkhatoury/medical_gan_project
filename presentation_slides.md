@@ -1,419 +1,556 @@
-# Presentation Slide Guide
+# Contenu des Slides - Projet Deep Learning GAN Médical
 
-## Theme
+## Slide 1 - Titre
 
-Use a modern medical-tech style:
+**Classification des lésions de la peau avec Deep Learning et GAN**
 
-- Background: white or very light gray `#F7F9FC`
-- Main text: navy `#18324A`
-- Accent: teal `#13A89E`
-- Secondary accent: coral `#E76F51`
-- Font: Inter, Aptos, Calibri, or Poppins
-- Style: clean, visual, low text, strong diagrams
+Projet basé sur le dataset HAM10000.
 
-Avoid long paragraphs. Each slide should communicate one idea.
+Ce projet utilise deux modèles :
 
-## Slide 1: Title
+- un GAN pour générer de nouvelles images médicales synthétiques ;
+- un CNN pour classifier les images de lésions cutanées.
 
-Title: **AI-Powered Skin Lesion Classification Using GAN-Generated Images**
+**À dire oralement :**  
+Dans ce projet, nous avons construit une chaîne complète de deep learning : préparation des données, génération d'images, entraînement d'un classificateur, évaluation, puis une petite application web.
 
-Subtitle: **HAM10000 Dataset | DCGAN | CNN Classifier | Flask Web App**
+---
 
-Layout:
+## Slide 2 - Idée générale du projet
 
-- Large title on the left or centered.
-- Background can be a faded dermoscopic image grid or subtle medical AI visual.
-- Put name, course, and date at the bottom.
+Le but est d'aider un modèle à mieux reconnaître différents types de lésions de la peau.
 
-Speaker point:
+Problème principal :
 
-This project uses generative AI and classification models to recognize seven skin lesion conditions from dermoscopic images.
+- certaines classes ont beaucoup d'images ;
+- d'autres classes ont très peu d'images ;
+- cela peut rendre l'apprentissage déséquilibré.
 
-## Slide 2: Project Motivation
+Notre solution :
 
-Title: **Why This Project Matters**
+- utiliser les vraies images du dataset ;
+- entraîner un GAN pour créer des images synthétiques ;
+- ajouter ces images synthétiques à l'entraînement du classificateur.
 
-Layout:
+**À dire oralement :**  
+Le GAN ne remplace pas les données réelles. Il sert à ajouter plus d'exemples pour aider le modèle à apprendre plus de variations.
 
-- Left side: three short points with icons.
-- Right side: dermoscopic image or doctor/AI illustration.
+---
 
-Content:
+## Slide 3 - Plan de la présentation
 
-- Skin lesion classification is visually challenging.
-- Medical datasets are often imbalanced.
-- Synthetic images can increase training diversity.
+Dans cette présentation, nous allons expliquer le projet étape par étape.
 
-Speaker point:
+Plan :
 
-Some lesion classes have fewer examples, making it difficult for a classifier to learn them well.
+- contexte et objectif du projet ;
+- dataset HAM10000 ;
+- préparation des données ;
+- entraînement du GAN ;
+- génération d'images synthétiques ;
+- entraînement du classificateur CNN ;
+- évaluation des résultats ;
+- application web et démonstration.
 
-## Slide 3: Project Objective
+**À dire oralement :**  
+Nous allons suivre le même ordre que le projet réel : d'abord les données, ensuite la génération d'images, puis la classification et enfin l'application.
 
-Title: **Project Objective**
+---
 
-Layout:
+## Slide 4 - Dataset utilisé
 
-- Use a horizontal pipeline diagram.
+Nous avons utilisé le dataset **HAM10000**.
 
-Pipeline:
+Il contient des images dermoscopiques de lésions cutanées.
 
-```text
-Download HAM10000 -> Prepare Data -> Train DCGAN -> Generate Synthetic Images -> Train CNN -> Web App
-```
+Le projet travaille avec 7 classes :
 
-Main text:
+- actinic_keratoses ;
+- basal_cell_carcinoma ;
+- benign_keratosis ;
+- dermatofibroma ;
+- melanoma ;
+- melanocytic_nevi ;
+- vascular_lesions.
 
-Generate synthetic dermoscopic images for each lesion class and use them with real images to train a CNN classifier.
+Les images sont organisées dans des dossiers par classe.
 
-Speaker point:
+**À dire oralement :**  
+Chaque image appartient à une classe. Le modèle apprend à associer une image avec sa bonne catégorie.
 
-The project is not only a model training task. It includes dataset preparation, GAN generation, classifier evaluation, and frontend deployment.
+---
 
-## Slide 4: Dataset
+## Slide 5 - Préparation des données
 
-Title: **HAM10000 Dataset**
+Avant l'entraînement, les données doivent être préparées.
 
-Layout:
-
-- Display a 7-image grid if available, one sample per class.
-- Put dataset facts on the right.
-
-Classes:
-
-- Actinic keratoses
-- Basal cell carcinoma
-- Benign keratosis
-- Dermatofibroma
-- Melanoma
-- Melanocytic nevi
-- Vascular lesions
-
-Facts:
-
-- Dataset: HAM10000 / Skin Cancer MNIST
-- Input: dermoscopic skin lesion images
-- Split: 80% train, 20% test
-- Image size: `128 x 128`
-
-Speaker point:
-
-The metadata file maps each image ID to one of seven diagnosis labels.
-
-## Slide 5: Data Preparation
-
-Title: **Data Preparation Pipeline**
-
-Layout:
-
-- Horizontal process diagram.
-- Small folder structure on the right.
-
-Process:
+Étapes principales :
 
 ```text
-Kaggle download -> Extract files -> Read metadata CSV -> Map labels -> Split data -> Resize and normalize
+Dataset brut -> Lecture des métadonnées -> Création des classes -> Train/Test -> Images prêtes
 ```
 
-Folder structure:
+Dans le projet :
+
+- les images sont séparées en entraînement et test ;
+- la séparation est stratifiée pour garder les classes représentées ;
+- les images sont redimensionnées en `128 x 128` ;
+- les pixels sont normalisés entre `-1` et `1`.
+
+Structure finale :
 
 ```text
 data/ham10000/
-  train/class_name/
-  test/class_name/
+  train/
+    class_name/
+  test/
+    class_name/
 ```
 
-Technical details:
+**À dire oralement :**  
+La préparation est importante parce que le modèle a besoin de données propres, bien organisées et dans le même format.
 
-- Stratified train/test split
-- Images resized to `128 x 128`
-- Pixel values normalized to `[-1, 1]`
-- Reproducibility through fixed random seeds
+---
 
-Speaker point:
+## Slide 6 - Pipeline complet du projet
 
-The folder structure makes the dataset easy to load with PyTorch.
-
-## Slide 6: GAN Concept
-
-Title: **DCGAN: Generating Synthetic Lesion Images**
-
-Layout:
-
-- Two-column diagram.
-- Left: generator.
-- Right: discriminator.
-
-Generator:
+Voici le déroulement complet :
 
 ```text
-Random noise + class label -> Synthetic lesion image
+1. Préparer les images réelles
+2. Entraîner le GAN
+3. Générer des images synthétiques
+4. Entraîner le CNN avec images réelles + synthétiques
+5. Évaluer le modèle
+6. Tester avec une application web
 ```
 
-Discriminator:
+**À dire oralement :**  
+Le projet n'est pas seulement un modèle. C'est une chaîne complète depuis les données jusqu'à une interface utilisable.
+
+---
+
+## Slide 7 - C'est quoi un GAN ?
+
+Un GAN est un modèle génératif.
+
+Il contient deux parties :
+
+- **Generator** : crée de fausses images ;
+- **Discriminator** : essaie de distinguer les vraies images des fausses.
+
+Principe :
 
 ```text
-Image + class label -> Real or fake
+Generator -> crée une image
+Discriminator -> vérifie si elle semble vraie ou fausse
 ```
 
-Speaker point:
+Avec le temps, le generator apprend à créer des images plus réalistes.
 
-The generator and discriminator improve through competition. The generator tries to create realistic images, while the discriminator tries to detect fake ones.
+**À dire oralement :**  
+On peut voir le GAN comme une compétition entre deux réseaux. L'un crée, l'autre juge.
 
-## Slide 7: GAN Architecture
+---
 
-Title: **Conditional DCGAN Architecture**
+## Slide 8 - Notre modèle GAN
 
-Layout:
+Nous avons utilisé un **Conditional DCGAN**.
 
-- Use stacked block diagrams instead of code.
+Cela veut dire que le GAN reçoit aussi la classe demandée.
 
-Generator architecture:
+Exemple :
 
 ```text
-Noise vector
-+ Label embedding
--> Transposed convolution blocks
--> Tanh output
--> RGB image
+Bruit aléatoire + classe melanoma -> image synthétique melanoma
 ```
 
-Discriminator architecture:
+Dans le code :
+
+- le generator utilise un vecteur de bruit et une classe ;
+- le discriminator reçoit une image et sa classe ;
+- le modèle peut générer des images pour les 7 classes.
+
+**À dire oralement :**  
+Le mot "conditional" signifie que nous pouvons contrôler la classe de l'image générée.
+
+---
+
+## Slide 9 - Architecture du Generator
+
+Le generator transforme un petit vecteur aléatoire en image.
+
+Étapes simples :
 
 ```text
-RGB image
-+ Label map
--> Strided convolution blocks
--> Sigmoid output
--> Real/fake probability
+Bruit + label de classe
+-> couches de convolution transposée
+-> image RGB 128 x 128
 ```
 
-Training details:
+Sortie :
 
-- Optimizer: Adam
-- Learning rate: `0.0002`
-- Betas: `(0.5, 0.999)`
-- Batch size: `64` recommended
-- Epochs: `50-100` recommended for final training
+- une image couleur ;
+- format `128 x 128` ;
+- valeurs normalisées avec `Tanh`.
 
-Speaker point:
+**À dire oralement :**  
+Au début, le bruit ne contient pas d'image. Le generator apprend progressivement à transformer ce bruit en image médicale plausible.
 
-The GAN is conditional, so one model can generate images for specific lesion classes.
+---
 
-## Slide 8: Synthetic Image Generation
+## Slide 10 - Architecture du Discriminator
 
-Title: **Generated Synthetic Samples**
+Le discriminator reçoit une image et prédit si elle est vraie ou générée.
 
-Layout:
-
-- Large image grid in the center.
-- Use an actual generated sample file from `generated_samples/` if available.
-- Add small labels or caption below the grid.
-
-Content:
-
-After training, random noise vectors are sampled and passed through the generator to create new synthetic images.
-
-Speaker point:
-
-Early samples may look blurry, but quality improves with longer GPU training.
-
-## Slide 9: Classifier Model
-
-Title: **CNN Classifier**
-
-Layout:
-
-- Left: CNN architecture diagram.
-- Right: probability bar chart mockup.
-
-Architecture:
+Étapes simples :
 
 ```text
-Input image
--> Conv Block 1
--> Conv Block 2
--> Conv Block 3
--> Conv Block 4
--> Fully Connected Layers
--> 7-class output
+Image + label de classe
+-> couches de convolution
+-> probabilité vrai/faux
 ```
 
-Training details:
+Il apprend avec deux types d'images :
 
-- Loss: cross-entropy
-- Optimizer: Adam
-- Augmentation: flips, rotations, color jitter
-- Training data: real + synthetic images
-- Test data: real images only
+- images réelles du dataset ;
+- images synthétiques créées par le generator.
 
-Speaker point:
+**À dire oralement :**  
+Le discriminator force le generator à s'améliorer, car il devient de plus en plus difficile à tromper.
 
-The classifier predicts the most likely lesion class and outputs probabilities for all seven classes.
+---
 
-## Slide 10: Experiment Design
+## Slide 11 - Entraînement du GAN
 
-Title: **Baseline vs GAN-Augmented Training**
+Pendant l'entraînement :
 
-Layout:
+- le discriminator apprend à reconnaître les vraies et fausses images ;
+- le generator apprend à produire des images qui semblent réelles ;
+- les deux pertes sont suivies : `Loss_D` et `Loss_G`.
 
-- Comparison table.
+Paramètres principaux du projet :
 
-Table:
+- image size : `128` ;
+- bruit latent : `100` ;
+- optimizer : `Adam` ;
+- learning rate : `0.0002` ;
+- batch size recommandé : `64` ;
+- epochs recommandés : `50`.
 
-| Model | Training Data | Test Data |
+Les exemples générés sont sauvegardés dans :
+
+```text
+generated_samples/
+```
+
+**À dire oralement :**  
+Un GAN demande souvent beaucoup de temps d'entraînement, surtout pour des images médicales.
+
+---
+
+## Slide 12 - Génération des images synthétiques
+
+Après l'entraînement, nous utilisons le generator pour créer de nouvelles images.
+
+Dans le projet, les images générées sont organisées par classe :
+
+```text
+synthetic_images/
+  melanoma/
+  basal_cell_carcinoma/
+  ...
+```
+
+Deux possibilités :
+
+- générer un nombre fixe d'images par classe ;
+- générer le même nombre que les images réelles disponibles.
+
+**À dire oralement :**  
+Ces images synthétiques sont ensuite utilisées comme données supplémentaires pour entraîner le classificateur.
+
+---
+
+## Slide 13 - Utilisation du CNN dans notre projet
+
+Dans notre projet, le CNN est utilisé pour classifier les images de lésions cutanées.
+
+Entrée du modèle :
+
+- une image RGB de taille `128 x 128`.
+
+Sortie du modèle :
+
+- une prédiction parmi les 7 classes ;
+- une probabilité pour chaque classe.
+
+Le CNN est entraîné avec deux types de données :
+
+- les images réelles du dataset HAM10000 ;
+- les images synthétiques générées par le GAN.
+
+Objectif :
+
+- vérifier si l'ajout des images générées améliore la classification.
+
+**À dire oralement :**  
+Le CNN est la partie qui prend la décision finale. Le GAN sert à enrichir les données, puis le CNN apprend avec ces données pour prédire la classe.
+
+---
+
+## Slide 14 - Notre classificateur CNN
+
+Le modèle s'appelle `SimpleCNN`.
+
+Architecture simplifiée :
+
+```text
+Image
+-> bloc convolution 1
+-> bloc convolution 2
+-> bloc convolution 3
+-> bloc convolution 4
+-> couches fully connected
+-> sortie 7 classes
+```
+
+Chaque bloc contient :
+
+- convolution ;
+- batch normalization ;
+- ReLU ;
+- max pooling.
+
+La dernière partie contient :
+
+- une couche linéaire ;
+- dropout ;
+- une sortie avec 7 scores.
+
+**À dire oralement :**  
+Même si le modèle est simple, il permet de tester clairement l'effet des images synthétiques.
+
+---
+
+## Slide 15 - Entraînement du CNN
+
+Le CNN est entraîné avec :
+
+- images réelles ;
+- images synthétiques générées par le GAN ;
+- augmentation de données.
+
+Augmentations utilisées :
+
+- retournement horizontal ;
+- retournement vertical léger ;
+- rotation ;
+- léger changement de couleur.
+
+Le modèle utilise :
+
+- loss : `CrossEntropyLoss` ;
+- optimizer : `Adam` ;
+- validation interne ;
+- meilleur modèle choisi selon la validation.
+
+**À dire oralement :**  
+Les augmentations aident le modèle à mieux généraliser, car une lésion peut apparaître avec différentes orientations ou luminosités.
+
+---
+
+## Slide 16 - Expérience réalisée
+
+Nous pouvons comparer deux entraînements :
+
+| Modèle | Données d'entraînement | Données de test |
 | --- | --- | --- |
-| Baseline CNN | Real images only | Real test images |
-| Augmented CNN | Real + synthetic images | Real test images |
+| Baseline CNN | Images réelles seulement | Images réelles |
+| CNN augmenté | Images réelles + synthétiques | Images réelles |
 
-Metrics:
+Le test se fait seulement sur des images réelles.
 
-- Accuracy
-- Precision
-- Recall
-- F1-score
-- Confusion matrix
+**À dire oralement :**  
+On teste toujours sur des vraies images pour vérifier si les images synthétiques aident réellement le modèle.
 
-Speaker point:
+---
 
-The baseline shows classifier performance without GAN images. The augmented model tests whether synthetic images improve performance.
+## Slide 17 - Évaluation
 
-## Slide 11: Evaluation Results
+Les métriques utilisées :
 
-Title: **Evaluation Results**
+- accuracy ;
+- precision ;
+- recall ;
+- F1-score ;
+- matrice de confusion.
 
-Layout:
-
-- Left: metric cards.
-- Right: confusion matrix.
-
-Metric cards:
-
-- Accuracy: `TBD`
-- Macro F1: `TBD`
-- Weighted F1: `TBD`
-- Best class: `TBD`
-
-Use results from:
+Les résultats sont sauvegardés dans :
 
 ```text
 checkpoints/skin_classifier_metrics.json
+generated_samples/skin_classifier_confusion_matrix.png
+generated_samples/skin_classifier_curves.png
 ```
 
-Speaker point:
+Résultats à remplir après entraînement :
 
-The model is evaluated on held-out real images only, which gives a more realistic test of generalization.
+| Modèle | Accuracy | Macro F1 | Weighted F1 |
+| --- | ---: | ---: | ---: |
+| CNN baseline | TBD | TBD | TBD |
+| CNN avec images GAN | TBD | TBD | TBD |
 
-## Slide 12: Frontend Application
+**À dire oralement :**  
+La matrice de confusion permet de voir quelles classes sont faciles ou difficiles à distinguer.
 
-Title: **Interactive Web App**
+---
 
-Layout:
+## Slide 18 - Application web
 
-- Two screenshots side by side.
-- Left: classifier page.
-- Right: generate samples page.
+Nous avons aussi une interface web avec Flask.
 
-Classifier page:
+Elle contient deux pages principales :
 
-- Upload image
-- View predicted class
-- View probability bars
+- page classification ;
+- page génération.
 
-Generate page:
+Page classification :
 
-- Select lesion class
-- Refresh generated samples
-- View generated grid
-
-Speaker point:
-
-The Flask frontend makes the trained models easy to interact with, even for users who do not run Python commands.
-
-## Slide 13: Live Demo
-
-Title: **Live Demo**
-
-Layout:
-
-- Very minimal slide with four steps.
-
-Demo flow:
-
-1. Open frontend link.
-2. Upload a lesion image.
-3. View predicted class and probabilities.
-4. Generate synthetic samples.
-
-Speaker point:
-
-This slide should stay on screen while doing the live demo.
-
-## Slide 14: Challenges
-
-Title: **Challenges Encountered**
-
-Layout:
-
-- Three vertical cards.
-
-Challenge 1: Dataset imbalance
-
-Some classes have many fewer examples than others.
-
-Challenge 2: GAN training time
-
-High-quality images require long training on GPU.
-
-Challenge 3: Medical reliability
-
-This is an educational prototype and not a clinical diagnostic tool.
-
-Speaker point:
-
-The biggest technical challenge is training a GAN long enough to produce realistic medical images.
-
-## Slide 15: Conclusion
-
-Title: **Conclusion**
-
-Layout:
-
-- Clean final slide with three or four takeaway points.
-
-Takeaways:
-
-- Built a full AI pipeline from dataset preparation to deployment.
-- Used a conditional DCGAN to generate class-specific synthetic images.
-- Trained a CNN classifier using real and synthetic dermoscopic images.
-- Created a frontend for image classification and sample generation.
-
-Final statement:
-
-This project demonstrates how generative AI can support medical image classification workflows when used carefully and responsibly.
-
-## Optional Backup Slide: Commands Used
-
-Title: **Main Commands**
-
-Use only if the audience needs implementation details.
-
-```powershell
-python download_dataset.py --output_dir data/ham10000_raw
-python prepare_dataset.py --raw_dir data/ham10000_raw --output_dir data/ham10000 --test_size 0.2 --overwrite
-python train_gan.py --train_dir data/ham10000/train --epochs 50 --batch_size 64 --image_size 128
-python generate_synthetic.py --checkpoint checkpoints/ham10000_dcgan.pth --match_real_dir data/ham10000/train --out_dir synthetic_images
-python train_classifier.py --real_train_dir data/ham10000/train --synthetic_train_dir synthetic_images --test_dir data/ham10000/test --epochs 20
-flask --app frontend/app.py run --host 0.0.0.0 --port 5000
+```text
+Uploader une image -> prédiction -> probabilités par classe
 ```
 
-## Optional Backup Slide: Responsible Use
+Page génération :
 
-Title: **Responsible Use**
+```text
+Choisir une classe -> générer des images synthétiques
+```
 
-Content:
+**À dire oralement :**  
+L'application permet de tester le modèle sans manipuler directement le code Python.
 
-- This system is a research and learning prototype.
-- It should not be used as a medical diagnosis tool.
-- Real clinical use requires expert validation, larger datasets, regulatory review, and careful bias testing.
+---
 
+## Slide 19 - Ce que nous avons construit
+
+Dans ce projet, nous avons construit :
+
+- un script de préparation du dataset ;
+- un Conditional DCGAN ;
+- un générateur d'images synthétiques ;
+- un CNN de classification ;
+- un script d'évaluation ;
+- des visualisations ;
+- une application web Flask.
+
+**À dire oralement :**  
+Le projet montre comment combiner génération d'images et classification dans une même chaîne deep learning.
+
+---
+
+## Slide 20 - Difficultés rencontrées
+
+Les principales difficultés :
+
+- les images médicales sont complexes ;
+- les classes du dataset ne sont pas équilibrées ;
+- le GAN peut produire des images floues au début ;
+- l'entraînement peut être long ;
+- les résultats dépendent beaucoup du nombre d'epochs et de la puissance GPU.
+
+**À dire oralement :**  
+Le GAN est la partie la plus difficile, car il doit apprendre une distribution visuelle réaliste.
+
+---
+
+## Slide 21 - Limites du projet
+
+Ce projet est un prototype éducatif.
+
+Il ne doit pas être utilisé pour faire un vrai diagnostic médical.
+
+Limites :
+
+- dataset limité ;
+- modèle CNN simple ;
+- qualité des images synthétiques variable ;
+- pas de validation clinique ;
+- besoin de tests plus avancés.
+
+**À dire oralement :**  
+Dans le domaine médical, il faut toujours une validation par des experts avant une utilisation réelle.
+
+---
+
+## Slide 22 - Améliorations possibles
+
+Pour améliorer le projet, on peut :
+
+- entraîner plus longtemps le GAN ;
+- utiliser un modèle plus puissant pour la classification ;
+- essayer ResNet ou EfficientNet ;
+- équilibrer mieux les classes ;
+- comparer plusieurs méthodes d'augmentation ;
+- ajouter plus de métriques ;
+- améliorer l'interface web.
+
+**À dire oralement :**  
+La version actuelle prouve le concept. Les prochaines étapes serviraient à améliorer la précision et la robustesse.
+
+---
+
+## Slide 23 - Conclusion
+
+Ce projet montre une utilisation complète du deep learning pour des images médicales.
+
+Résumé :
+
+- nous avons préparé le dataset HAM10000 ;
+- nous avons entraîné un GAN conditionnel ;
+- nous avons généré des images synthétiques ;
+- nous avons entraîné un CNN avec les données réelles et synthétiques ;
+- nous avons évalué le modèle ;
+- nous avons créé une application web simple.
+
+Conclusion finale :
+
+**Les GAN peuvent aider à augmenter les données, mais leur utilisation en médecine doit rester prudente et bien évaluée.**
+
+**À dire oralement :**  
+Le point important est que l'IA peut aider dans l'analyse d'images médicales, mais elle doit être testée avec rigueur.
+
+---
+
+## Slide 24 - Mini démo
+
+Déroulement proposé :
+
+1. Ouvrir la page web.
+2. Aller à la page classification.
+3. Uploader une image de lésion.
+4. Lire la classe prédite et les probabilités.
+5. Aller à la page génération.
+6. Choisir une classe.
+7. Générer des images synthétiques.
+
+**À dire oralement :**  
+Cette démo montre les deux parties importantes du projet : classifier une image et générer de nouvelles images.
+
+---
+
+## Slide 25 - Message final
+
+Le projet combine deux idées importantes :
+
+- **générer** des images avec un GAN ;
+- **classifier** des images avec un CNN.
+
+La chaîne finale est :
+
+```text
+Données réelles -> GAN -> Images synthétiques -> CNN -> Prédiction -> Interface web
+```
+
+**À dire oralement :**  
+Ce travail montre comment les méthodes génératives peuvent être utilisées pour soutenir un système de classification d'images médicales.
