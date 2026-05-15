@@ -4,7 +4,7 @@
 <section class="page-head">
   <div>
     <span class="eyebrow">Conditional DCGAN</span>
-    <h1>Generate lung samples</h1>
+    <h1>Generate chest X-ray samples</h1>
   </div>
   <div class="checkpoint-chip {% if generator_status.exists %}ready{% endif %}">
     <i data-lucide="{% if generator_status.exists %}check-circle-2{% else %}circle-alert{% endif %}"></i>
@@ -28,7 +28,7 @@
 
     <form method="post" class="stack">
       <div>
-        <label for="class_name" class="form-label">Tissue class</label>
+        <label for="class_name" class="form-label">Radiography class</label>
         <select id="class_name" name="class_name" class="form-select form-select-lg">
           <option value="all" {% if selected_class == "all" %}selected{% endif %}>All classes</option>
           {% for class_name in class_names %}
@@ -78,7 +78,7 @@
       <img
         id="generated-grid"
         src="{{ image_url }}?v={{ range(1, 1000000) | random }}"
-        alt="Generated lung histopathology image grid"
+        alt="Generated COVID-19 radiography image grid"
         class="sample-grid"
       >
     {% else %}

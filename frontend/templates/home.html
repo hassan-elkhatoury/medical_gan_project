@@ -4,7 +4,7 @@
 <section class="page-head dashboard-head">
   <div>
     <span class="eyebrow">{{ dataset_name }}</span>
-    <h1>Lung histopathology model workbench</h1>
+    <h1>COVID chest X-ray model workbench</h1>
   </div>
   <div class="head-actions">
     <a class="btn btn-primary" href="{{ url_for('classify') }}"><i data-lucide="scan-search"></i>Classify</a>
@@ -27,14 +27,14 @@
         <span class="status-icon"><i data-lucide="boxes"></i></span>
         <div>
           <strong>Conditional DCGAN</strong>
-          <span>{% if generator_status.exists %}{{ '%.1f'|format(generator_status.size_mb) }} MB{% else %}Missing lung_dcgan.pth{% endif %}</span>
+          <span>{% if generator_status.exists %}{{ '%.1f'|format(generator_status.size_mb) }} MB{% else %}Missing covid_dcgan.pth{% endif %}</span>
         </div>
       </div>
       <div class="status-row {% if classifier_status.exists %}ready{% endif %}">
         <span class="status-icon"><i data-lucide="brain-circuit"></i></span>
         <div>
           <strong>CNN classifier</strong>
-          <span>{% if classifier_status.exists %}{{ '%.1f'|format(classifier_status.size_mb) }} MB{% else %}Missing lung_classifier.pth{% endif %}</span>
+          <span>{% if classifier_status.exists %}{{ '%.1f'|format(classifier_status.size_mb) }} MB{% else %}Missing covid_classifier.pth{% endif %}</span>
         </div>
       </div>
     </div>
@@ -43,8 +43,8 @@
   <article class="panel tissue-panel">
     <div class="panel-title">
       <div>
-        <span class="eyebrow">Specimen View</span>
-        <h2>Histopathology palette</h2>
+        <span class="eyebrow">Radiography View</span>
+        <h2>Chest X-ray signal</h2>
       </div>
       <i data-lucide="scan-line"></i>
     </div>
@@ -72,7 +72,7 @@
     {% else %}
       <div class="empty-mini">
         <i data-lucide="file-clock"></i>
-        <span>Waiting for lung_classifier_metrics.json</span>
+        <span>Waiting for covid_classifier_metrics.json</span>
       </div>
     {% endif %}
   </article>
@@ -81,7 +81,7 @@
     <div class="panel-title">
       <div>
         <span class="eyebrow">Classes</span>
-        <h2>LC25000 lung subset</h2>
+        <h2>Radiography classes</h2>
       </div>
       <i data-lucide="tags"></i>
     </div>
@@ -98,7 +98,7 @@
     <span>01</span>
     <div>
       <strong>Prepare</strong>
-      <p>LC25000 lung folders become a stratified train/test set.</p>
+      <p>Kaggle X-ray folders become a stratified train/test set.</p>
     </div>
   </div>
   <div class="workflow-step">
@@ -112,14 +112,14 @@
     <span>03</span>
     <div>
       <strong>Copy checkpoints</strong>
-      <p>lung_dcgan.pth and lung_classifier.pth return locally.</p>
+      <p>covid_dcgan.pth and covid_classifier.pth return locally.</p>
     </div>
   </div>
   <div class="workflow-step">
     <span>04</span>
     <div>
       <strong>Inspect</strong>
-      <p>Classify tissue images or generate synthetic sample grids.</p>
+      <p>Classify chest X-rays or generate synthetic sample grids.</p>
     </div>
   </div>
 </section>

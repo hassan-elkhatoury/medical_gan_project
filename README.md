@@ -1,12 +1,13 @@
 # Medical GAN Project
 
-This project trains a conditional DCGAN for lung cancer histopathology image generation, trains a CNN classifier, and serves both through a local Flask app.
+This project trains a conditional DCGAN for COVID-19 chest X-ray generation, trains a CNN classifier, and serves both through a local Flask app.
 
-The default dataset target is the lung subset of LC25000:
+The default dataset target is the Kaggle COVID-19 Radiography Database:
 
-- `lung_adenocarcinoma`
-- `lung_benign_tissue`
-- `lung_squamous_cell_carcinoma`
+- `covid`
+- `lung_opacity`
+- `normal`
+- `viral_pneumonia`
 
 ## Run Locally
 
@@ -22,8 +23,8 @@ python -m pip install -r requirements.txt
 Required trained files:
 
 ```text
-checkpoints/lung_dcgan.pth
-checkpoints/lung_classifier.pth
+checkpoints/covid_dcgan.pth
+checkpoints/covid_classifier.pth
 ```
 
 Start Flask:
@@ -42,43 +43,43 @@ http://127.0.0.1:5000/generate
 
 ## Train Or Change The Models
 
-Download and prepare the LC25000 lung subset:
+Download and prepare the COVID-19 Radiography Database:
 
 ```bash
-python download_dataset.py --output_dir data/lung_cancer_raw
-python prepare_dataset.py --raw_dir data/lung_cancer_raw --output_dir data/lung_cancer --test_size 0.2 --overwrite
+python download_dataset.py --output_dir data/covid_radiography_raw
+python prepare_dataset.py --raw_dir data/covid_radiography_raw --output_dir data/covid_radiography --test_size 0.2 --overwrite
 ```
 
 Train the GAN:
 
 ```bash
-python train_gan.py --train_dir data/lung_cancer/train --epochs 50 --batch_size 32 --image_size 64 --num_workers 2
+python train_gan.py --train_dir data/covid_radiography/train --epochs 50 --batch_size 32 --image_size 64 --num_workers 2
 ```
 
 Generate synthetic images:
 
 ```bash
-python generate_synthetic.py --checkpoint checkpoints/lung_dcgan.pth --match_real_dir data/lung_cancer/train --out_dir synthetic_lung_images --samples_per_class 100 --batch_size 16
+python generate_synthetic.py --checkpoint checkpoints/covid_dcgan.pth --match_real_dir data/covid_radiography/train --out_dir synthetic_covid_images --samples_per_class 100 --batch_size 16
 ```
 
 Train the classifier:
 
 ```bash
-python train_classifier.py --real_train_dir data/lung_cancer/train --synthetic_train_dir synthetic_lung_images --test_dir data/lung_cancer/test --epochs 20 --batch_size 32 --num_workers 2
+python train_classifier.py --real_train_dir data/covid_radiography/train --synthetic_train_dir synthetic_covid_images --test_dir data/covid_radiography/test --epochs 20 --batch_size 32 --num_workers 2
 ```
 
 Evaluate the classifier:
 
 ```bash
-python evaluate.py --checkpoint checkpoints/lung_classifier.pth --test_dir data/lung_cancer/test
+python evaluate.py --checkpoint checkpoints/covid_classifier.pth --test_dir data/covid_radiography/test
 ```
 
 ## What To Change
 
 - Better generated images: increase `--epochs` in `train_gan.py`.
 - Faster experiments: keep `--image_size 64`, use smaller `--batch_size`, or pass `--max_images_per_class` to `prepare_dataset.py`.
-- Better quality experiments: use more GAN epochs, then replace `checkpoints/lung_dcgan.pth`.
-- Better classifier results: retrain `train_classifier.py`, then replace `checkpoints/lung_classifier.pth`.
+- Better quality experiments: use more GAN epochs, then replace `checkpoints/covid_dcgan.pth`.
+- Better classifier results: retrain `train_classifier.py`, then replace `checkpoints/covid_classifier.pth`.
 - Different Flask port: change `--port 5000` in the run command.
 
 If a checkpoint is missing, the Flask app shows the missing-file error so you know what to train next.

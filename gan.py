@@ -1,8 +1,8 @@
 """
-DCGAN models for lung histopathology image generation.
+DCGAN models for COVID-19 chest X-ray image generation.
 
 The conditional variants are used by default so a single GAN can generate
-samples for all lung cancer tissue classes.
+samples for all COVID-19 Radiography Database classes.
 """
 
 from __future__ import annotations

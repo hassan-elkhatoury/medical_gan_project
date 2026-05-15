@@ -1,9 +1,9 @@
 """
-Dataset utilities for lung cancer histopathology experiments.
+Dataset utilities for COVID-19 chest radiography experiments.
 
 The project uses a folder layout after preparation:
 
-    data/lung_cancer/
+    data/covid_radiography/
         train/<class_name>/*.jpg
         test/<class_name>/*.jpg
 
@@ -28,10 +28,25 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
 
-LUNG_CANCER_LABELS: dict[str, str] = {
-    "lung_aca": "lung_adenocarcinoma",
-    "lung_n": "lung_benign_tissue",
-    "lung_scc": "lung_squamous_cell_carcinoma",
+COVID_RADIOGRAPHY_LABELS: dict[str, str] = {
+    "covid": "covid",
+    "lung_opacity": "lung_opacity",
+    "normal": "normal",
+    "viral_pneumonia": "viral_pneumonia",
+}
+
+COVID_CLASS_ALIASES: dict[str, str] = {
+    "covid": "covid",
+    "covid_19": "covid",
+    "covid-19": "covid",
+    "covid19": "covid",
+    "lung_opacity": "lung_opacity",
+    "lung opacity": "lung_opacity",
+    "lung opacity non covid": "lung_opacity",
+    "lung_opacity_non_covid": "lung_opacity",
+    "normal": "normal",
+    "viral_pneumonia": "viral_pneumonia",
+    "viral pneumonia": "viral_pneumonia",
 }
 
 # Kept only so old HAM10000 experiments can still be prepared if needed.
@@ -43,22 +58,6 @@ HAM10000_LABELS: dict[str, str] = {
     "mel": "melanoma",
     "nv": "melanocytic_nevi",
     "vasc": "vascular_lesions",
-}
-
-LUNG_CLASS_ALIASES: dict[str, str] = {
-    **LUNG_CANCER_LABELS,
-    "lung adenocarcinoma": "lung_adenocarcinoma",
-    "lung_adenocarcinoma": "lung_adenocarcinoma",
-    "adenocarcinoma": "lung_adenocarcinoma",
-    "lung benign tissue": "lung_benign_tissue",
-    "lung_benign_tissue": "lung_benign_tissue",
-    "lung benign": "lung_benign_tissue",
-    "benign lung tissue": "lung_benign_tissue",
-    "lung normal": "lung_benign_tissue",
-    "lung_normal": "lung_benign_tissue",
-    "lung squamous cell carcinoma": "lung_squamous_cell_carcinoma",
-    "lung_squamous_cell_carcinoma": "lung_squamous_cell_carcinoma",
-    "squamous cell carcinoma": "lung_squamous_cell_carcinoma",
 }
 
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")
@@ -193,7 +192,7 @@ def discover_class_names(*roots: str | os.PathLike[str]) -> list[str]:
             names = [p.name for p in sorted(path.iterdir()) if p.is_dir()]
             if names:
                 return names
-    return sorted(LUNG_CANCER_LABELS.values())
+    return sorted(COVID_RADIOGRAPHY_LABELS.values())
 
 
 def get_dataloaders(
@@ -267,77 +266,83 @@ def build_image_index(image_dirs: Iterable[Path]) -> dict[str, Path]:
     return index
 
 
-def normalize_lung_class_name(name: str) -> str | None:
-    """Map common LC25000 folder names to project class names."""
+def normalize_covid_class_name(name: str) -> str | None:
+    """Map common COVID-19 Radiography Database names to project class names."""
 
-    key = name.strip().lower().replace("-", "_")
-    key = " ".join(key.replace("_", " ").split())
+    raw = name.strip().lower()
+    key = " ".join(raw.replace("-", " ").replace("_", " ").split())
     underscored = key.replace(" ", "_")
-    return LUNG_CLASS_ALIASES.get(underscored) or LUNG_CLASS_ALIASES.get(key)
+    return COVID_CLASS_ALIASES.get(raw) or COVID_CLASS_ALIASES.get(key) or COVID_CLASS_ALIASES.get(underscored)
 
 
-def find_lung_class_dirs(raw_dir: str | os.PathLike[str]) -> dict[str, Path]:
-    """Find LC25000 lung class folders under an extracted dataset tree."""
+def infer_covid_class_from_path(path: Path) -> str | None:
+    """Infer a COVID radiography class from a file path."""
+
+    for part in reversed(path.parts):
+        class_name = normalize_covid_class_name(part)
+        if class_name is not None:
+            return class_name
+    return None
+
+
+def collect_covid_radiography_records(raw_dir: str | os.PathLike[str]) -> list[tuple[Path, str]]:
+    """Collect labeled X-ray image files and skip mask folders/files."""
 
     raw_path = Path(raw_dir)
-    class_dirs: dict[str, Path] = {}
-    for path in raw_path.rglob("*"):
-        if not path.is_dir():
+    records: list[tuple[Path, str]] = []
+    for path in sorted(raw_path.rglob("*")):
+        if not path.is_file() or path.suffix.lower() not in IMAGE_EXTENSIONS:
             continue
-        class_name = normalize_lung_class_name(path.name)
-        if class_name is None:
+        lowered_parts = [part.lower() for part in path.parts]
+        if any("mask" in part for part in lowered_parts):
             continue
-        has_images = any(
-            child.is_file() and child.suffix.lower() in IMAGE_EXTENSIONS
-            for child in path.rglob("*")
-        )
-        if has_images:
-            class_dirs[class_name] = path
-    return class_dirs
+        class_name = infer_covid_class_from_path(path)
+        if class_name is not None:
+            records.append((path, class_name))
+    return records
 
 
-def prepare_lung_cancer(
-    raw_dir: str | os.PathLike[str] = "data/lung_cancer_raw",
-    output_dir: str | os.PathLike[str] = "data/lung_cancer",
+def prepare_covid_radiography(
+    raw_dir: str | os.PathLike[str] = "data/covid_radiography_raw",
+    output_dir: str | os.PathLike[str] = "data/covid_radiography",
     test_size: float = 0.2,
     seed: int = 42,
     resize: Optional[int] = None,
     overwrite: bool = False,
     max_images_per_class: Optional[int] = None,
 ) -> None:
-    """Create train/test class folders from LC25000-style lung image folders."""
+    """Create train/test class folders from the COVID-19 Radiography Database."""
 
     raw_path = Path(raw_dir)
     output_path = Path(output_dir)
-    class_dirs = find_lung_class_dirs(raw_path)
-    required_classes = set(LUNG_CANCER_LABELS.values())
-    missing = sorted(required_classes.difference(class_dirs))
+    required_classes = set(COVID_RADIOGRAPHY_LABELS.values())
+    records = collect_covid_radiography_records(raw_path)
+
+    grouped: dict[str, list[Path]] = {class_name: [] for class_name in sorted(required_classes)}
+    for path, class_name in records:
+        if class_name in grouped:
+            grouped[class_name].append(path)
+
+    missing = sorted(class_name for class_name, paths in grouped.items() if not paths)
     if missing:
         raise FileNotFoundError(
-            f"Could not find lung class folders for {missing} under {raw_path}"
+            f"Could not find COVID radiography image files for {missing} under {raw_path}"
         )
+
+    selected_records: list[tuple[Path, str]] = []
+    for class_name, paths in grouped.items():
+        paths = sorted(paths)
+        if max_images_per_class is not None:
+            paths = paths[:max_images_per_class]
+        selected_records.extend((path, class_name) for path in paths)
 
     if overwrite and output_path.exists():
         shutil.rmtree(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
 
-    records: list[tuple[Path, str]] = []
-    for class_name in sorted(required_classes):
-        paths = sorted(
-            path
-            for path in class_dirs[class_name].rglob("*")
-            if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS
-        )
-        if max_images_per_class is not None:
-            paths = paths[:max_images_per_class]
-        records.extend((path, class_name) for path in paths)
-
-    if not records:
-        raise FileNotFoundError(f"No lung cancer image files found under {raw_path}")
-
-    labels = [class_name for _, class_name in records]
+    labels = [class_name for _, class_name in selected_records]
     train_records, test_records = train_test_split(
-        records,
+        selected_records,
         test_size=test_size,
         random_state=seed,
         stratify=labels,
@@ -364,7 +369,7 @@ def prepare_lung_cancer(
         output_path / "classes.csv", index=False
     )
     pd.DataFrame(
-        [{"image_path": str(path), "class_name": class_name} for path, class_name in records]
+        [{"image_path": str(path), "class_name": class_name} for path, class_name in selected_records]
     ).to_csv(output_path / "metadata_prepared.csv", index=False)
 
 
@@ -444,16 +449,17 @@ def prepare_ham10000(
 
 
 __all__ = [
-    "LUNG_CANCER_LABELS",
+    "COVID_RADIOGRAPHY_LABELS",
     "HAM10000_LABELS",
     "ImagePathDataset",
     "MedicalImageDataset",
     "SkinLesionDataset",
     "SingleClassDataset",
     "build_transforms",
+    "collect_covid_radiography_records",
     "discover_class_names",
     "get_dataloaders",
-    "prepare_lung_cancer",
+    "prepare_covid_radiography",
     "prepare_ham10000",
     "set_seed",
 ]

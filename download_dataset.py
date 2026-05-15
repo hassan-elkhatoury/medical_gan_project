@@ -1,4 +1,4 @@
-"""Download and extract the LC25000 lung/colon histopathology dataset from Kaggle."""
+"""Download and extract the COVID-19 Radiography Database from Kaggle."""
 
 from __future__ import annotations
 
@@ -9,9 +9,9 @@ import zipfile
 from pathlib import Path
 
 
-def download_lung_cancer_dataset(
-    output_dir: str = "data/lung_cancer_raw",
-    dataset: str = "andrewmvd/lung-and-colon-cancer-histopathological-images",
+def download_covid_radiography_dataset(
+    output_dir: str = "data/covid_radiography_raw",
+    dataset: str = "tawsifurrahman/covid19-radiography-database",
     force: bool = False,
 ) -> Path:
     """Download the Kaggle dataset archive and extract it."""
@@ -25,7 +25,7 @@ def download_lung_cancer_dataset(
             "KAGGLE_USERNAME and KAGGLE_KEY before running this script."
         )
 
-    zip_path = output_path / "lung-and-colon-cancer-histopathological-images.zip"
+    zip_path = output_path / "covid19-radiography-database.zip"
     command = [
         "kaggle",
         "datasets",
@@ -46,20 +46,20 @@ def download_lung_cancer_dataset(
 
     with zipfile.ZipFile(zip_path, "r") as archive:
         archive.extractall(output_path)
-    print(f"Extracted lung cancer histopathology dataset to {output_path}")
+    print(f"Extracted COVID-19 Radiography Database to {output_path}")
     return output_path
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Download LC25000 from Kaggle")
-    parser.add_argument("--output_dir", default="data/lung_cancer_raw")
+    parser = argparse.ArgumentParser(description="Download COVID-19 Radiography Database from Kaggle")
+    parser.add_argument("--output_dir", default="data/covid_radiography_raw")
     parser.add_argument(
         "--dataset",
-        default="andrewmvd/lung-and-colon-cancer-histopathological-images",
+        default="tawsifurrahman/covid19-radiography-database",
     )
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
-    download_lung_cancer_dataset(args.output_dir, args.dataset, args.force)
+    download_covid_radiography_dataset(args.output_dir, args.dataset, args.force)
 
 
 if __name__ == "__main__":

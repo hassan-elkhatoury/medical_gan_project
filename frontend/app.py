@@ -1,4 +1,4 @@
-"""Flask frontend for lung cancer classification and conditional sample generation."""
+"""Flask frontend for COVID-19 radiography classification and sample generation."""
 
 from __future__ import annotations
 
@@ -25,11 +25,11 @@ from gan import ConditionalGenerator  # noqa: E402
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-DATASET_NAME = "LC25000 lung histopathology subset"
-DATA_TRAIN_DIR = PROJECT_ROOT / "data" / "lung_cancer" / "train"
-CLASSIFIER_PATH = PROJECT_ROOT / "checkpoints" / "lung_classifier.pth"
-GENERATOR_PATH = PROJECT_ROOT / "checkpoints" / "lung_dcgan.pth"
-METRICS_PATH = PROJECT_ROOT / "checkpoints" / "lung_classifier_metrics.json"
+DATASET_NAME = "COVID-19 Radiography Database"
+DATA_TRAIN_DIR = PROJECT_ROOT / "data" / "covid_radiography" / "train"
+CLASSIFIER_PATH = PROJECT_ROOT / "checkpoints" / "covid_classifier.pth"
+GENERATOR_PATH = PROJECT_ROOT / "checkpoints" / "covid_dcgan.pth"
+METRICS_PATH = PROJECT_ROOT / "checkpoints" / "covid_classifier_metrics.json"
 STATIC_GENERATED_DIR = Path(__file__).resolve().parent / "static" / "generated"
 STATIC_GENERATED_DIR.mkdir(parents=True, exist_ok=True)
 

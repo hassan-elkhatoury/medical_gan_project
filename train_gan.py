@@ -1,8 +1,8 @@
 """
-Train a class-conditional DCGAN on prepared lung cancer histopathology folders.
+Train a class-conditional DCGAN on prepared COVID-19 chest radiography folders.
 
 Example:
-    python train_gan.py --train_dir data/lung_cancer/train --epochs 50 --image_size 128
+    python train_gan.py --train_dir data/covid_radiography/train --epochs 50 --image_size 128
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from gan import ConditionalDiscriminator, ConditionalGenerator, weights_init
 def train_gan(
     train_dir: str,
     output_dir: str = "checkpoints",
-    out_name: str = "lung_dcgan.pth",
+    out_name: str = "covid_dcgan.pth",
     sample_dir: str = "generated_samples",
     epochs: int = 50,
     batch_size: int = 64,
@@ -159,9 +159,9 @@ def train_gan(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train a conditional DCGAN")
-    parser.add_argument("--train_dir", default="data/lung_cancer/train")
+    parser.add_argument("--train_dir", default="data/covid_radiography/train")
     parser.add_argument("--out_dir", default="checkpoints")
-    parser.add_argument("--out_name", default="lung_dcgan.pth")
+    parser.add_argument("--out_name", default="covid_dcgan.pth")
     parser.add_argument("--sample_dir", default="generated_samples")
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--batch_size", type=int, default=64)

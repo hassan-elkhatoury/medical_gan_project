@@ -1,4 +1,4 @@
-"""Evaluate a saved classifier checkpoint on real lung cancer test images."""
+"""Evaluate a saved classifier checkpoint on real COVID-19 radiography test images."""
 
 from __future__ import annotations
 
@@ -16,8 +16,8 @@ from utils import plot_confusion_matrix
 
 
 def evaluate_classifier(
-    checkpoint_path: str = "checkpoints/lung_classifier.pth",
-    test_dir: str = "data/lung_cancer/test",
+    checkpoint_path: str = "checkpoints/covid_classifier.pth",
+    test_dir: str = "data/covid_radiography/test",
     output_json: str = "checkpoints/evaluation_metrics.json",
     batch_size: int = 64,
     device: str | None = None,
@@ -75,8 +75,8 @@ def evaluate_classifier(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate classifier checkpoint")
-    parser.add_argument("--checkpoint", default="checkpoints/lung_classifier.pth")
-    parser.add_argument("--test_dir", default="data/lung_cancer/test")
+    parser.add_argument("--checkpoint", default="checkpoints/covid_classifier.pth")
+    parser.add_argument("--test_dir", default="data/covid_radiography/test")
     parser.add_argument("--output_json", default="checkpoints/evaluation_metrics.json")
     parser.add_argument("--batch_size", type=int, default=64)
     args = parser.parse_args()

@@ -4,7 +4,7 @@
 <section class="page-head">
   <div>
     <span class="eyebrow">CNN Inference</span>
-    <h1>Classify lung tissue</h1>
+    <h1>Classify chest X-ray</h1>
   </div>
   <div class="checkpoint-chip {% if classifier_status.exists %}ready{% endif %}">
     <i data-lucide="{% if classifier_status.exists %}check-circle-2{% else %}circle-alert{% endif %}"></i>
@@ -21,7 +21,7 @@
     <div class="panel-title">
       <div>
         <span class="eyebrow">Input</span>
-        <h2>Histopathology image</h2>
+        <h2>Chest X-ray image</h2>
       </div>
       <i data-lucide="image-up"></i>
     </div>
@@ -29,7 +29,7 @@
     <form id="classify-form" method="post" enctype="multipart/form-data" class="stack">
       <input id="image" name="image" type="file" accept="image/*" class="visually-hidden" required>
 
-      <div class="upload-zone" data-upload-zone tabindex="0" role="button" aria-label="Upload lung histopathology image">
+      <div class="upload-zone" data-upload-zone tabindex="0" role="button" aria-label="Upload COVID-19 radiography image">
         <div class="upload-empty">
           <span><i data-lucide="image-plus"></i></span>
           <strong>Drop image</strong>
@@ -39,7 +39,7 @@
           id="client-preview"
           class="upload-preview"
           src="{% if preview %}{{ preview }}{% endif %}"
-          alt="Selected tissue preview"
+          alt="Selected chest X-ray preview"
           {% if not preview %}hidden{% endif %}
         >
       </div>

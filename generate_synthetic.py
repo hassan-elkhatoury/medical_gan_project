@@ -1,9 +1,9 @@
 """
-Generate class-organized synthetic lung histopathology images from a trained conditional DCGAN.
+Generate class-organized synthetic COVID-19 radiography images from a trained conditional DCGAN.
 
 Example:
-    python generate_synthetic.py --checkpoint checkpoints/lung_dcgan.pth \
-        --match_real_dir data/lung_cancer/train --out_dir synthetic_lung_images
+    python generate_synthetic.py --checkpoint checkpoints/covid_dcgan.pth \
+        --match_real_dir data/covid_radiography/train --out_dir synthetic_covid_images
 """
 
 from __future__ import annotations
@@ -44,10 +44,10 @@ def class_counts(real_dir: str | Path, class_names: list[str]) -> dict[str, int]
 
 
 def generate_synthetic_images(
-    checkpoint: str | Path = "checkpoints/lung_dcgan.pth",
-    out_dir: str | Path = "synthetic_lung_images",
+    checkpoint: str | Path = "checkpoints/covid_dcgan.pth",
+    out_dir: str | Path = "synthetic_covid_images",
     samples_per_class: int | None = None,
-    match_real_dir: str | Path | None = "data/lung_cancer/train",
+    match_real_dir: str | Path | None = "data/covid_radiography/train",
     batch_size: int = 64,
     seed: int = 42,
     device: str | None = None,
@@ -91,11 +91,11 @@ def generate_synthetic_images(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate synthetic lung histopathology images")
-    parser.add_argument("--checkpoint", default="checkpoints/lung_dcgan.pth")
-    parser.add_argument("--out_dir", default="synthetic_lung_images")
+    parser = argparse.ArgumentParser(description="Generate synthetic COVID-19 radiography images")
+    parser.add_argument("--checkpoint", default="checkpoints/covid_dcgan.pth")
+    parser.add_argument("--out_dir", default="synthetic_covid_images")
     parser.add_argument("--samples_per_class", type=int, default=None)
-    parser.add_argument("--match_real_dir", default="data/lung_cancer/train")
+    parser.add_argument("--match_real_dir", default="data/covid_radiography/train")
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()

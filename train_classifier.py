@@ -1,12 +1,12 @@
 """
-Train a CNN classifier with real lung images and optional GAN-generated images.
+Train a CNN classifier with real COVID-19 radiography images and optional GAN-generated images.
 
 Examples:
-    python train_classifier.py --real_train_dir data/lung_cancer/train \
-        --synthetic_train_dir synthetic_lung_images --test_dir data/lung_cancer/test
+    python train_classifier.py --real_train_dir data/covid_radiography/train \
+        --synthetic_train_dir synthetic_covid_images --test_dir data/covid_radiography/test
 
-    python train_classifier.py --real_train_dir data/lung_cancer/train \
-        --test_dir data/lung_cancer/test --out_name baseline_lung_classifier.pth
+    python train_classifier.py --real_train_dir data/covid_radiography/train \
+        --test_dir data/covid_radiography/test --out_name baseline_covid_classifier.pth
 """
 
 from __future__ import annotations
@@ -58,11 +58,11 @@ def evaluate_model(
 
 
 def train_classifier(
-    real_train_dir: str = "data/lung_cancer/train",
-    synthetic_train_dir: Optional[str] = "synthetic_lung_images",
-    test_dir: str = "data/lung_cancer/test",
+    real_train_dir: str = "data/covid_radiography/train",
+    synthetic_train_dir: Optional[str] = "synthetic_covid_images",
+    test_dir: str = "data/covid_radiography/test",
     output_dir: str = "checkpoints",
-    out_name: str = "lung_classifier.pth",
+    out_name: str = "covid_classifier.pth",
     epochs: int = 20,
     batch_size: int = 64,
     image_size: int = 128,
@@ -223,8 +223,8 @@ def train_classifier(
     }
     checkpoint_path = output_path / out_name
     torch.save(checkpoint, checkpoint_path)
-    if out_name == "lung_classifier.pth":
-        torch.save(checkpoint, "lung_classifier.pth")
+    if out_name == "covid_classifier.pth":
+        torch.save(checkpoint, "covid_classifier.pth")
 
     with (output_path / f"{Path(out_name).stem}_metrics.json").open("w", encoding="utf-8") as handle:
         json.dump(metrics, handle, indent=2)
@@ -244,12 +244,12 @@ def train_classifier(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train lung cancer histopathology classifier")
-    parser.add_argument("--real_train_dir", default="data/lung_cancer/train")
-    parser.add_argument("--synthetic_train_dir", default="synthetic_lung_images")
-    parser.add_argument("--test_dir", default="data/lung_cancer/test")
+    parser = argparse.ArgumentParser(description="Train COVID-19 chest radiography classifier")
+    parser.add_argument("--real_train_dir", default="data/covid_radiography/train")
+    parser.add_argument("--synthetic_train_dir", default="synthetic_covid_images")
+    parser.add_argument("--test_dir", default="data/covid_radiography/test")
     parser.add_argument("--out_dir", default="checkpoints")
-    parser.add_argument("--out_name", default="lung_classifier.pth")
+    parser.add_argument("--out_name", default="covid_classifier.pth")
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--image_size", type=int, default=128)

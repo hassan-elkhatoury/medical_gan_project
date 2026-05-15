@@ -3,7 +3,7 @@ classifier.py
 -------------
 
 This module defines a simple convolutional neural network (CNN) for
-multi‑class classification of lung histopathology images.  The architecture
+multi-class classification of COVID-19 chest X-ray images.  The architecture
 consists of several convolutional blocks followed by fully connected
 layers.  It is deliberately kept lightweight to allow faster training
 on moderate hardware, but can be replaced with more sophisticated
@@ -20,7 +20,7 @@ class SimpleCNN(nn.Module):
     Parameters
     ----------
     num_classes : int
-        Number of output classes.  For the lung LC25000 subset this should be 3.
+        Number of output classes.  For the COVID-19 Radiography Database this should be 4.
     """
 
     def __init__(self, num_classes: int = 7) -> None:
