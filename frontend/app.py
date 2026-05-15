@@ -27,36 +27,98 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DATASET_NAME = "COVID-19 Radiography Database"
 DATA_TRAIN_DIR = PROJECT_ROOT / "data" / "covid_radiography" / "train"
-CLASSIFIER_PATH = PROJECT_ROOT / "checkpoints" / "covid_classifier.pth"
-GENERATOR_PATH = PROJECT_ROOT / "checkpoints" / "covid_dcgan.pth"
-METRICS_PATH = PROJECT_ROOT / "checkpoints" / "covid_classifier_metrics.json"
+CHECKPOINT_DIR = PROJECT_ROOT / "checkpoints"
+CLASSIFIER_PATHS = [
+    CHECKPOINT_DIR / "covid_classifier.pth",
+    CHECKPOINT_DIR / "lung_classifier.pth",
+]
+GENERATOR_PATHS = [
+    CHECKPOINT_DIR / "covid_dcgan.pth",
+    CHECKPOINT_DIR / "generator.pth",
+    CHECKPOINT_DIR / "lung_dcgan.pth",
+]
+METRICS_PATHS = [
+    CHECKPOINT_DIR / "covid_classifier_metrics.json",
+    CHECKPOINT_DIR / "lung_classifier_metrics.json",
+]
 STATIC_GENERATED_DIR = Path(__file__).resolve().parent / "static" / "generated"
 STATIC_GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+DATASET_SAMPLE_FILES = [
+    {
+        "file": "dataset_samples/sample_01.jpg",
+        "label": "Dataset X-ray 01",
+        "note": "public COVID-19 radiography sample",
+    },
+    {
+        "file": "dataset_samples/sample_02.jpg",
+        "label": "Dataset X-ray 02",
+        "note": "public COVID-19 radiography sample",
+    },
+    {
+        "file": "dataset_samples/sample_03.jpg",
+        "label": "Dataset X-ray 03",
+        "note": "public COVID-19 radiography sample",
+    },
+]
 
 _classifier_cache: tuple[SimpleCNN, dict] | None = None
 _generator_cache: tuple[ConditionalGenerator, dict] | None = None
 
 
-def checkpoint_status(path: Path) -> dict:
+def resolve_checkpoint_path(paths: list[Path], kind: str) -> Path:
+    for path in paths:
+        if path.exists():
+            return path
+
+    expected = "\n".join(f"  - {path}" for path in paths)
+    available_paths = sorted(CHECKPOINT_DIR.glob("*.pth")) if CHECKPOINT_DIR.exists() else []
+    available = "\n".join(f"  - {path}" for path in available_paths) or "  - no .pth files found"
+    raise FileNotFoundError(
+        f"Missing {kind} checkpoint.\n"
+        f"Expected one of:\n{expected}\n"
+        f"Available:\n{available}"
+    )
+
+
+def checkpoint_status(paths: list[Path]) -> dict:
+    path = next((candidate for candidate in paths if candidate.exists()), paths[0])
     exists = path.exists()
     return {
         "exists": exists,
         "path": path,
+        "filename": path.name,
+        "expected_names": [candidate.name for candidate in paths],
         "size_mb": path.stat().st_size / (1024 * 1024) if exists else None,
     }
 
 
 def load_metrics() -> dict | None:
-    if not METRICS_PATH.exists():
+    metrics_path = next((path for path in METRICS_PATHS if path.exists()), None)
+    if metrics_path is None:
         return None
-    with METRICS_PATH.open("r", encoding="utf-8") as handle:
+    with metrics_path.open("r", encoding="utf-8") as handle:
         metrics = json.load(handle)
     report = metrics.get("classification_report", {})
     return {
         "accuracy": metrics.get("accuracy"),
         "macro_f1": report.get("macro avg", {}).get("f1-score"),
         "weighted_f1": report.get("weighted avg", {}).get("f1-score"),
+        "filename": metrics_path.name,
     }
+
+
+def dataset_samples() -> list[dict]:
+    samples = []
+    static_root = Path(app.static_folder or "")
+    for sample in DATASET_SAMPLE_FILES:
+        if (static_root / sample["file"]).exists():
+            samples.append(
+                {
+                    **sample,
+                    "url": url_for("static", filename=sample["file"]),
+                }
+            )
+    return samples
 
 
 def image_to_data_url(image: Image.Image) -> str:
@@ -70,10 +132,8 @@ def load_classifier() -> tuple[SimpleCNN, dict]:
     global _classifier_cache
     if _classifier_cache is not None:
         return _classifier_cache
-    if not CLASSIFIER_PATH.exists():
-        raise FileNotFoundError(f"Missing classifier checkpoint: {CLASSIFIER_PATH}")
-
-    checkpoint = torch.load(CLASSIFIER_PATH, map_location=DEVICE)
+    classifier_path = resolve_checkpoint_path(CLASSIFIER_PATHS, "classifier")
+    checkpoint = torch.load(classifier_path, map_location=DEVICE)
     class_names = checkpoint.get("class_names") or discover_class_names(DATA_TRAIN_DIR)
     model = SimpleCNN(num_classes=len(class_names)).to(DEVICE)
     state = checkpoint.get("model_state_dict", checkpoint)
@@ -91,10 +151,8 @@ def load_generator() -> tuple[ConditionalGenerator, dict]:
     global _generator_cache
     if _generator_cache is not None:
         return _generator_cache
-    if not GENERATOR_PATH.exists():
-        raise FileNotFoundError(f"Missing GAN checkpoint: {GENERATOR_PATH}")
-
-    checkpoint = torch.load(GENERATOR_PATH, map_location=DEVICE)
+    generator_path = resolve_checkpoint_path(GENERATOR_PATHS, "GAN")
+    checkpoint = torch.load(generator_path, map_location=DEVICE)
     class_names = checkpoint.get("class_names") or discover_class_names(DATA_TRAIN_DIR)
     model = ConditionalGenerator(
         nz=checkpoint.get("nz", 100),
@@ -124,9 +182,10 @@ def index():
         data_train_dir=DATA_TRAIN_DIR,
         device=DEVICE,
         class_names=class_names,
-        classifier_status=checkpoint_status(CLASSIFIER_PATH),
-        generator_status=checkpoint_status(GENERATOR_PATH),
+        classifier_status=checkpoint_status(CLASSIFIER_PATHS),
+        generator_status=checkpoint_status(GENERATOR_PATHS),
         metrics=load_metrics(),
+        sample_images=dataset_samples(),
     )
 
 
@@ -175,9 +234,10 @@ def classify():
         preview=preview,
         class_names=class_names,
         dataset_name=DATASET_NAME,
-        classifier_status=checkpoint_status(CLASSIFIER_PATH),
+        classifier_status=checkpoint_status(CLASSIFIER_PATHS),
         metrics=load_metrics(),
         device=DEVICE,
+        sample_images=dataset_samples(),
     )
 
 
@@ -217,8 +277,9 @@ def generate():
         class_names=class_names,
         selected_class=selected_class,
         dataset_name=DATASET_NAME,
-        generator_status=checkpoint_status(GENERATOR_PATH),
+        generator_status=checkpoint_status(GENERATOR_PATHS),
         device=DEVICE,
+        sample_images=dataset_samples(),
     )
 
 
