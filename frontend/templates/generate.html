@@ -83,11 +83,7 @@
       >
     {% else %}
       <div class="empty-state">
-        <div class="tissue-preview wide" aria-hidden="true">
-          <span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span><span></span>
-        </div>
+        {% include "sample_gallery.html" %}
         <strong>No grid generated</strong>
         <span>Choose a class and run the generator.</span>
       </div>

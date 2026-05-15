@@ -18,7 +18,42 @@ from data import MedicalImageDataset, discover_class_names, set_seed
 from gan import ConditionalGenerator
 
 
+def resolve_checkpoint_path(checkpoint_path: str | Path) -> Path:
+    """Find the requested generator checkpoint or explain what is missing."""
+
+    path = Path(checkpoint_path)
+    if path.exists():
+        return path
+
+    candidates = [
+        path.parent / "generator.pth",
+        path.parent / "covid_dcgan.pth",
+        path.parent / "lung_dcgan.pth",
+    ]
+    candidates.extend(sorted(path.parent.glob("*dcgan*.pth")))
+    candidates.extend(sorted(path.parent.glob("*generator*.pth")))
+
+    for candidate in candidates:
+        if candidate.exists():
+            print(f"Requested checkpoint not found: {path}")
+            print(f"Using available generator checkpoint instead: {candidate}")
+            return candidate
+
+    available = sorted(path.parent.glob("*.pth")) if path.parent.exists() else []
+    if available:
+        available_text = "\n".join(f"  - {candidate}" for candidate in available)
+    else:
+        available_text = "  - no .pth files found"
+    raise FileNotFoundError(
+        "Generator checkpoint is missing.\n"
+        f"Requested: {path}\n"
+        f"Available in {path.parent}:\n{available_text}\n"
+        "Run the GAN training cell again and make sure it finishes successfully."
+    )
+
+
 def load_generator(checkpoint_path: str | Path, device: str) -> tuple[ConditionalGenerator, dict]:
+    checkpoint_path = resolve_checkpoint_path(checkpoint_path)
     checkpoint = torch.load(checkpoint_path, map_location=device)
     if "generator_state_dict" not in checkpoint:
         raise ValueError("Expected a training checkpoint with generator_state_dict")

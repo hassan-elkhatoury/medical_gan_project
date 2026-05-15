@@ -363,46 +363,69 @@ body {
   font-size: 0.9rem;
 }
 
-.tissue-preview {
+.xray-gallery {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.45rem;
-  min-height: 190px;
-  padding: 0.65rem;
-  background:
-    linear-gradient(135deg, rgba(247, 228, 234, 0.72), rgba(223, 243, 239, 0.74)),
-    #f7f0f4;
-  border: 1px solid #ead7e1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.xray-card {
+  display: grid;
+  grid-template-rows: minmax(112px, 1fr) auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  background: #12212a;
+  border: 1px solid #263d49;
   border-radius: 8px;
 }
 
-.tissue-preview span {
-  min-height: 42px;
-  border: 1px solid rgba(95, 55, 82, 0.12);
-  border-radius: 7px;
-  background:
-    linear-gradient(135deg, rgba(184, 90, 114, 0.16), rgba(22, 125, 119, 0.12)),
-    repeating-linear-gradient(45deg, rgba(94, 53, 84, 0.12) 0 4px, rgba(255, 255, 255, 0.15) 4px 9px),
-    #f4dbe4;
+.xray-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #0d171d;
 }
 
-.tissue-preview span:nth-child(2n) {
-  background:
-    linear-gradient(135deg, rgba(31, 95, 153, 0.13), rgba(184, 90, 114, 0.15)),
-    repeating-linear-gradient(-35deg, rgba(27, 65, 82, 0.1) 0 5px, rgba(255, 255, 255, 0.16) 5px 10px),
-    #dcecf0;
+.xray-card figcaption {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.55rem;
+  color: #d8e6ec;
+  background: #132630;
 }
 
-.tissue-preview.small {
-  width: min(100%, 420px);
-  min-height: 150px;
-  margin-bottom: 1rem;
+.xray-card strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.tissue-preview.wide {
-  width: min(100%, 720px);
-  min-height: 210px;
-  margin-bottom: 1rem;
+.xray-card span,
+.sample-source {
+  color: #9eb3bd;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.sample-source {
+  margin: 0.6rem 0 0;
+}
+
+.xray-empty {
+  display: grid;
+  place-items: center;
+  gap: 0.45rem;
+  min-height: 190px;
+  color: var(--muted);
+  background: #eef4f6;
+  border: 1px dashed #b7c9d2;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
 }
 
 .metric-list {
@@ -730,6 +753,7 @@ body {
 .empty-state {
   display: grid;
   place-items: center;
+  gap: 0.55rem;
   min-height: 420px;
   color: var(--muted);
   background: var(--surface-soft);
@@ -737,6 +761,14 @@ body {
   border-radius: 8px;
   text-align: center;
   padding: 1rem;
+}
+
+.empty-state .xray-gallery {
+  width: min(100%, 620px);
+}
+
+.empty-state .sample-source {
+  margin-top: 0;
 }
 
 .empty-state strong {
@@ -839,5 +871,24 @@ body {
 
   .sample-grid {
     max-height: none;
+  }
+
+  .xray-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .xray-card {
+    grid-template-columns: 92px 1fr;
+    grid-template-rows: auto;
+    align-items: stretch;
+  }
+
+  .xray-card img {
+    height: 100%;
+    min-height: 92px;
+  }
+
+  .xray-card figcaption {
+    align-content: center;
   }
 }

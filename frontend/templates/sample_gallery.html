@@ -1,0 +1,19 @@
+{% if sample_images %}
+  <div class="xray-gallery">
+    {% for sample in sample_images %}
+      <figure class="xray-card">
+        <img src="{{ sample.url }}" alt="{{ sample.label }}">
+        <figcaption>
+          <strong>{{ sample.label }}</strong>
+          <span>{{ sample.note }}</span>
+        </figcaption>
+      </figure>
+    {% endfor %}
+  </div>
+  <p class="sample-source">Preview images are from the public COVID-19 Radiography Database mirror.</p>
+{% else %}
+  <div class="xray-empty">
+    <i data-lucide="image-off"></i>
+    <span>Dataset preview images are not available.</span>
+  </div>
+{% endif %}

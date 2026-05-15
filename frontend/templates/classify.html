@@ -84,11 +84,7 @@
       </div>
     {% else %}
       <div class="empty-state">
-        <div class="tissue-preview small" aria-hidden="true">
-          <span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span><span></span>
-        </div>
+        {% include "sample_gallery.html" %}
         <strong>Awaiting image</strong>
         <span>Classifier probabilities will appear here.</span>
       </div>

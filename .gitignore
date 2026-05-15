@@ -3,12 +3,5 @@ __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
 
-data/
-checkpoints/
-frontend/static/generated/
-generated_samples/*
-!generated_samples/.gitkeep
-synthetic_images/*
-!synthetic_images/.gitkeep
 
 *.log

@@ -27,32 +27,40 @@
         <span class="status-icon"><i data-lucide="boxes"></i></span>
         <div>
           <strong>Conditional DCGAN</strong>
-          <span>{% if generator_status.exists %}{{ '%.1f'|format(generator_status.size_mb) }} MB{% else %}Missing covid_dcgan.pth{% endif %}</span>
+          <span>
+            {% if generator_status.exists %}
+              {{ generator_status.filename }} · {{ '%.1f'|format(generator_status.size_mb) }} MB
+            {% else %}
+              Missing {{ generator_status.expected_names|join(' or ') }}
+            {% endif %}
+          </span>
         </div>
       </div>
       <div class="status-row {% if classifier_status.exists %}ready{% endif %}">
         <span class="status-icon"><i data-lucide="brain-circuit"></i></span>
         <div>
           <strong>CNN classifier</strong>
-          <span>{% if classifier_status.exists %}{{ '%.1f'|format(classifier_status.size_mb) }} MB{% else %}Missing covid_classifier.pth{% endif %}</span>
+          <span>
+            {% if classifier_status.exists %}
+              {{ classifier_status.filename }} · {{ '%.1f'|format(classifier_status.size_mb) }} MB
+            {% else %}
+              Missing {{ classifier_status.expected_names|join(' or ') }}
+            {% endif %}
+          </span>
         </div>
       </div>
     </div>
   </article>
 
-  <article class="panel tissue-panel">
+  <article class="panel xray-panel">
     <div class="panel-title">
       <div>
-        <span class="eyebrow">Radiography View</span>
-        <h2>Chest X-ray signal</h2>
+        <span class="eyebrow">Dataset Preview</span>
+        <h2>Real chest X-rays</h2>
       </div>
       <i data-lucide="scan-line"></i>
     </div>
-    <div class="tissue-preview" aria-hidden="true">
-      <span></span><span></span><span></span><span></span>
-      <span></span><span></span><span></span><span></span>
-      <span></span><span></span><span></span><span></span>
-    </div>
+    {% include "sample_gallery.html" %}
   </article>
 
   <article class="panel metrics-panel">
@@ -68,11 +76,12 @@
         <div><span>Accuracy</span><strong>{{ '%.1f'|format(metrics.accuracy * 100) }}%</strong></div>
         <div><span>Macro F1</span><strong>{{ '%.3f'|format(metrics.macro_f1) }}</strong></div>
         <div><span>Weighted F1</span><strong>{{ '%.3f'|format(metrics.weighted_f1) }}</strong></div>
+        <div><span>Metrics file</span><strong>{{ metrics.filename }}</strong></div>
       </div>
     {% else %}
       <div class="empty-mini">
         <i data-lucide="file-clock"></i>
-        <span>Waiting for covid_classifier_metrics.json</span>
+        <span>Waiting for covid_classifier_metrics.json or lung_classifier_metrics.json</span>
       </div>
     {% endif %}
   </article>
