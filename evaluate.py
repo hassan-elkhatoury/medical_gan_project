@@ -1,4 +1,4 @@
-"""Evaluate a saved classifier checkpoint on real HAM10000 test images."""
+"""Evaluate a saved classifier checkpoint on real lung cancer test images."""
 
 from __future__ import annotations
 
@@ -11,13 +11,13 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 from torch.utils.data import DataLoader
 
 from classifier import SimpleCNN
-from data import SkinLesionDataset, build_transforms, discover_class_names
+from data import MedicalImageDataset, build_transforms, discover_class_names
 from utils import plot_confusion_matrix
 
 
 def evaluate_classifier(
-    checkpoint_path: str = "checkpoints/skin_classifier.pth",
-    test_dir: str = "data/ham10000/test",
+    checkpoint_path: str = "checkpoints/lung_classifier.pth",
+    test_dir: str = "data/lung_cancer/test",
     output_json: str = "checkpoints/evaluation_metrics.json",
     batch_size: int = 64,
     device: str | None = None,
@@ -33,7 +33,7 @@ def evaluate_classifier(
     model.load_state_dict(state)
     model.eval()
 
-    dataset = SkinLesionDataset(
+    dataset = MedicalImageDataset(
         test_dir,
         transform=build_transforms(image_size=image_size, augment=False),
         class_names=class_names,
@@ -75,8 +75,8 @@ def evaluate_classifier(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate classifier checkpoint")
-    parser.add_argument("--checkpoint", default="checkpoints/skin_classifier.pth")
-    parser.add_argument("--test_dir", default="data/ham10000/test")
+    parser.add_argument("--checkpoint", default="checkpoints/lung_classifier.pth")
+    parser.add_argument("--test_dir", default="data/lung_cancer/test")
     parser.add_argument("--output_json", default="checkpoints/evaluation_metrics.json")
     parser.add_argument("--batch_size", type=int, default=64)
     args = parser.parse_args()

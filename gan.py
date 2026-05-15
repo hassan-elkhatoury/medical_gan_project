@@ -1,8 +1,8 @@
 """
-DCGAN models for dermoscopic image generation.
+DCGAN models for lung histopathology image generation.
 
 The conditional variants are used by default so a single GAN can generate
-samples for all seven HAM10000 lesion classes.
+samples for all lung cancer tissue classes.
 """
 
 from __future__ import annotations

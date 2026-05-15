@@ -1,12 +1,12 @@
 """
-Train a CNN classifier with real images and optional GAN-generated images.
+Train a CNN classifier with real lung images and optional GAN-generated images.
 
 Examples:
-    python train_classifier.py --real_train_dir data/ham10000/train \
-        --synthetic_train_dir synthetic_images --test_dir data/ham10000/test
+    python train_classifier.py --real_train_dir data/lung_cancer/train \
+        --synthetic_train_dir synthetic_lung_images --test_dir data/lung_cancer/test
 
-    python train_classifier.py --real_train_dir data/ham10000/train \
-        --test_dir data/ham10000/test --out_name baseline_classifier.pth
+    python train_classifier.py --real_train_dir data/lung_cancer/train \
+        --test_dir data/lung_cancer/test --out_name baseline_lung_classifier.pth
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 
 from classifier import SimpleCNN
-from data import ImagePathDataset, SkinLesionDataset, build_transforms, discover_class_names, set_seed
+from data import ImagePathDataset, MedicalImageDataset, build_transforms, discover_class_names, set_seed
 from utils import plot_confusion_matrix, plot_training_curves
 
 
@@ -58,11 +58,11 @@ def evaluate_model(
 
 
 def train_classifier(
-    real_train_dir: str = "data/ham10000/train",
-    synthetic_train_dir: Optional[str] = "synthetic_images",
-    test_dir: str = "data/ham10000/test",
+    real_train_dir: str = "data/lung_cancer/train",
+    synthetic_train_dir: Optional[str] = "synthetic_lung_images",
+    test_dir: str = "data/lung_cancer/test",
     output_dir: str = "checkpoints",
-    out_name: str = "skin_classifier.pth",
+    out_name: str = "lung_classifier.pth",
     epochs: int = 20,
     batch_size: int = 64,
     image_size: int = 128,
@@ -88,11 +88,11 @@ def train_classifier(
     train_transform = build_transforms(image_size=image_size, augment=True)
     eval_transform = build_transforms(image_size=image_size, augment=False)
 
-    real_dataset = SkinLesionDataset(real_train_dir, transform=None, class_names=class_names)
+    real_dataset = MedicalImageDataset(real_train_dir, transform=None, class_names=class_names)
     image_paths = list(real_dataset.image_paths)
     labels = list(real_dataset.labels)
     if synthetic_train_dir and Path(synthetic_train_dir).is_dir():
-        synth_dataset = SkinLesionDataset(
+        synth_dataset = MedicalImageDataset(
             synthetic_train_dir, transform=None, class_names=class_names
         )
         if len(synth_dataset) > 0:
@@ -121,7 +121,7 @@ def train_classifier(
         transform=eval_transform,
     )
 
-    test_dataset = SkinLesionDataset(test_dir, transform=eval_transform, class_names=class_names)
+    test_dataset = MedicalImageDataset(test_dir, transform=eval_transform, class_names=class_names)
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
@@ -223,8 +223,8 @@ def train_classifier(
     }
     checkpoint_path = output_path / out_name
     torch.save(checkpoint, checkpoint_path)
-    if out_name == "skin_classifier.pth":
-        torch.save(checkpoint, "skin_classifier.pth")
+    if out_name == "lung_classifier.pth":
+        torch.save(checkpoint, "lung_classifier.pth")
 
     with (output_path / f"{Path(out_name).stem}_metrics.json").open("w", encoding="utf-8") as handle:
         json.dump(metrics, handle, indent=2)
@@ -244,12 +244,12 @@ def train_classifier(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train skin-lesion classifier")
-    parser.add_argument("--real_train_dir", default="data/ham10000/train")
-    parser.add_argument("--synthetic_train_dir", default="synthetic_images")
-    parser.add_argument("--test_dir", default="data/ham10000/test")
+    parser = argparse.ArgumentParser(description="Train lung cancer histopathology classifier")
+    parser.add_argument("--real_train_dir", default="data/lung_cancer/train")
+    parser.add_argument("--synthetic_train_dir", default="synthetic_lung_images")
+    parser.add_argument("--test_dir", default="data/lung_cancer/test")
     parser.add_argument("--out_dir", default="checkpoints")
-    parser.add_argument("--out_name", default="skin_classifier.pth")
+    parser.add_argument("--out_name", default="lung_classifier.pth")
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--image_size", type=int, default=128)

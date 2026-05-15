@@ -1,43 +1,211 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="row g-4 align-items-start">
-  <div class="col-lg-5">
-    <h1 class="h3 mb-3">Classify a Lesion Image</h1>
+<section class="page-head">
+  <div>
+    <span class="eyebrow">CNN Inference</span>
+    <h1>Classify lung tissue</h1>
+  </div>
+  <div class="checkpoint-chip {% if classifier_status.exists %}ready{% endif %}">
+    <i data-lucide="{% if classifier_status.exists %}check-circle-2{% else %}circle-alert{% endif %}"></i>
+    {% if classifier_status.exists %}Classifier ready{% else %}Checkpoint missing{% endif %}
+  </div>
+</section>
+
+<section class="lab-layout">
+  <aside class="panel control-panel">
     {% if error %}
       <div class="alert alert-warning">{{ error }}</div>
     {% endif %}
-    <form method="post" enctype="multipart/form-data" class="panel">
-      <label for="image" class="form-label">Dermoscopic image</label>
-      <input id="image" name="image" type="file" accept="image/*" class="form-control mb-3" required>
-      <button type="submit" class="btn btn-primary w-100">Run Classification</button>
-    </form>
-  </div>
 
-  <div class="col-lg-7">
-    {% if preview %}
-      <img src="{{ preview }}" alt="Uploaded lesion preview" class="preview-image mb-3">
-    {% endif %}
-
-    {% if result %}
-      <div class="result-heading mb-3">
-        <span class="text-muted">Predicted class</span>
-        <strong>{{ result.prediction }}</strong>
+    <div class="panel-title">
+      <div>
+        <span class="eyebrow">Input</span>
+        <h2>Histopathology image</h2>
       </div>
-      <div class="panel">
+      <i data-lucide="image-up"></i>
+    </div>
+
+    <form id="classify-form" method="post" enctype="multipart/form-data" class="stack">
+      <input id="image" name="image" type="file" accept="image/*" class="visually-hidden" required>
+
+      <div class="upload-zone" data-upload-zone tabindex="0" role="button" aria-label="Upload lung histopathology image">
+        <div class="upload-empty">
+          <span><i data-lucide="image-plus"></i></span>
+          <strong>Drop image</strong>
+          <small>PNG, JPG, or JPEG</small>
+        </div>
+        <img
+          id="client-preview"
+          class="upload-preview"
+          src="{% if preview %}{{ preview }}{% endif %}"
+          alt="Selected tissue preview"
+          {% if not preview %}hidden{% endif %}
+        >
+      </div>
+
+      <div id="file-meta" class="file-meta">
+        {% if preview %}Image ready{% else %}No image selected{% endif %}
+      </div>
+
+      <div class="button-row">
+        <button id="browse-image" type="button" class="btn btn-outline-primary"><i data-lucide="folder-open"></i>Browse</button>
+        <button id="paste-image" type="button" class="btn btn-outline-secondary"><i data-lucide="clipboard"></i>Paste</button>
+        <button type="submit" class="btn btn-primary"><i data-lucide="activity"></i>Run</button>
+      </div>
+    </form>
+
+    <div class="class-grid compact">
+      {% for class_name in class_names %}
+        <span>{{ class_name.replace('_', ' ') }}</span>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <section class="panel result-panel">
+    {% if result %}
+      <div class="result-header">
+        <div>
+          <span class="eyebrow">Prediction</span>
+          <h2>{{ result.prediction.replace('_', ' ') }}</h2>
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-copy-result><i data-lucide="copy"></i>Copy</button>
+      </div>
+      <div class="probability-panel">
         {% for item in result.probabilities %}
           <div class="probability-row">
-            <span>{{ item.class_name }}</span>
-            <div class="progress">
-              <div class="progress-bar" style="width: {{ '%.2f'|format(item.probability * 100) }}%"></div>
+            <span class="class-name">{{ item.class_name.replace('_', ' ') }}</span>
+            <div class="probability-track">
+              <span style="width: {{ '%.2f'|format(item.probability * 100) }}%"></span>
             </div>
-            <span class="probability-value">{{ '%.1f'|format(item.probability * 100) }}%</span>
+            <strong>{{ '%.1f'|format(item.probability * 100) }}%</strong>
           </div>
         {% endfor %}
       </div>
     {% else %}
-      <div class="empty-state">Upload an image to view class probabilities.</div>
+      <div class="empty-state">
+        <div class="tissue-preview small" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <strong>Awaiting image</strong>
+        <span>Classifier probabilities will appear here.</span>
+      </div>
     {% endif %}
-  </div>
+  </section>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const zone = document.querySelector("[data-upload-zone]");
+  const input = document.getElementById("image");
+  const browse = document.getElementById("browse-image");
+  const paste = document.getElementById("paste-image");
+  const preview = document.getElementById("client-preview");
+  const meta = document.getElementById("file-meta");
+  const copyResult = document.querySelector("[data-copy-result]");
+
+  if (!zone || !input || !browse || !paste || !preview || !meta) {
+    return;
+  }
+
+  const setImageFile = (file) => {
+    if (!file || !file.type.startsWith("image/")) {
+      meta.textContent = "Choose an image file.";
+      return;
+    }
+
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+    meta.textContent = `${file.name || "Pasted image"} - ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+  };
+
+  browse.addEventListener("click", () => input.click());
+  zone.addEventListener("click", () => input.click());
+  zone.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      input.click();
+    }
+  });
+
+  input.addEventListener("change", () => setImageFile(input.files[0]));
+
+  ["dragenter", "dragover"].forEach((eventName) => {
+    zone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      zone.classList.add("is-dragging");
+    });
+  });
+
+  ["dragleave", "drop"].forEach((eventName) => {
+    zone.addEventListener(eventName, () => zone.classList.remove("is-dragging"));
+  });
+
+  zone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    setImageFile(event.dataTransfer.files[0]);
+  });
+
+  const readClipboardImage = async () => {
+    if (!navigator.clipboard?.read) {
+      meta.textContent = "Clipboard image paste is unavailable.";
+      return;
+    }
+    const items = await navigator.clipboard.read();
+    for (const item of items) {
+      const type = item.types.find((candidate) => candidate.startsWith("image/"));
+      if (type) {
+        const blob = await item.getType(type);
+        setImageFile(new File([blob], "pasted-image.png", { type }));
+        return;
+      }
+    }
+    meta.textContent = "No image found in clipboard.";
+  };
+
+  paste.addEventListener("click", () => {
+    readClipboardImage().catch(() => {
+      meta.textContent = "Clipboard access was blocked.";
+    });
+  });
+
+  document.addEventListener("paste", (event) => {
+    const items = Array.from(event.clipboardData?.items || []);
+    const imageItem = items.find((item) => item.type.startsWith("image/"));
+    if (!imageItem) {
+      return;
+    }
+    const file = imageItem.getAsFile();
+    if (file) {
+      setImageFile(file);
+      zone.focus();
+    }
+  });
+
+  copyResult?.addEventListener("click", async () => {
+    const rows = Array.from(document.querySelectorAll(".probability-row")).map((row) => {
+      const name = row.querySelector(".class-name")?.textContent?.trim();
+      const value = row.querySelector("strong")?.textContent?.trim();
+      return `${name}: ${value}`;
+    });
+    const predicted = document.querySelector(".result-header h2")?.textContent?.trim();
+    await navigator.clipboard.writeText([`Prediction: ${predicted}`, ...rows].join("\\n"));
+    copyResult.textContent = "Copied";
+    window.setTimeout(() => {
+      copyResult.innerHTML = '<i data-lucide="copy"></i>Copy';
+      if (window.lucide) {
+        window.lucide.createIcons({ strokeWidth: 1.8 });
+      }
+    }, 1400);
+  });
+})();
+</script>
 {% endblock %}

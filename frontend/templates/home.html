@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-head dashboard-head">
+  <div>
+    <span class="eyebrow">{{ dataset_name }}</span>
+    <h1>Lung histopathology model workbench</h1>
+  </div>
+  <div class="head-actions">
+    <a class="btn btn-primary" href="{{ url_for('classify') }}"><i data-lucide="scan-search"></i>Classify</a>
+    <a class="btn btn-outline-primary" href="{{ url_for('generate') }}"><i data-lucide="sparkles"></i>Generate</a>
+  </div>
+</section>
+
+<section class="dashboard-grid">
+  <article class="panel readiness-panel">
+    <div class="panel-title">
+      <div>
+        <span class="eyebrow">Readiness</span>
+        <h2>Model checkpoints</h2>
+      </div>
+      <i data-lucide="server-cog"></i>
+    </div>
+
+    <div class="status-stack">
+      <div class="status-row {% if generator_status.exists %}ready{% endif %}">
+        <span class="status-icon"><i data-lucide="boxes"></i></span>
+        <div>
+          <strong>Conditional DCGAN</strong>
+          <span>{% if generator_status.exists %}{{ '%.1f'|format(generator_status.size_mb) }} MB{% else %}Missing lung_dcgan.pth{% endif %}</span>
+        </div>
+      </div>
+      <div class="status-row {% if classifier_status.exists %}ready{% endif %}">
+        <span class="status-icon"><i data-lucide="brain-circuit"></i></span>
+        <div>
+          <strong>CNN classifier</strong>
+          <span>{% if classifier_status.exists %}{{ '%.1f'|format(classifier_status.size_mb) }} MB{% else %}Missing lung_classifier.pth{% endif %}</span>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="panel tissue-panel">
+    <div class="panel-title">
+      <div>
+        <span class="eyebrow">Specimen View</span>
+        <h2>Histopathology palette</h2>
+      </div>
+      <i data-lucide="scan-line"></i>
+    </div>
+    <div class="tissue-preview" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+  </article>
+
+  <article class="panel metrics-panel">
+    <div class="panel-title">
+      <div>
+        <span class="eyebrow">Evaluation</span>
+        <h2>Latest classifier metrics</h2>
+      </div>
+      <i data-lucide="chart-no-axes-combined"></i>
+    </div>
+    {% if metrics %}
+      <div class="metric-list">
+        <div><span>Accuracy</span><strong>{{ '%.1f'|format(metrics.accuracy * 100) }}%</strong></div>
+        <div><span>Macro F1</span><strong>{{ '%.3f'|format(metrics.macro_f1) }}</strong></div>
+        <div><span>Weighted F1</span><strong>{{ '%.3f'|format(metrics.weighted_f1) }}</strong></div>
+      </div>
+    {% else %}
+      <div class="empty-mini">
+        <i data-lucide="file-clock"></i>
+        <span>Waiting for lung_classifier_metrics.json</span>
+      </div>
+    {% endif %}
+  </article>
+
+  <article class="panel classes-panel">
+    <div class="panel-title">
+      <div>
+        <span class="eyebrow">Classes</span>
+        <h2>LC25000 lung subset</h2>
+      </div>
+      <i data-lucide="tags"></i>
+    </div>
+    <div class="class-grid">
+      {% for class_name in class_names %}
+        <span>{{ class_name.replace('_', ' ') }}</span>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="workflow-band">
+  <div class="workflow-step">
+    <span>01</span>
+    <div>
+      <strong>Prepare</strong>
+      <p>LC25000 lung folders become a stratified train/test set.</p>
+    </div>
+  </div>
+  <div class="workflow-step">
+    <span>02</span>
+    <div>
+      <strong>Train in Colab</strong>
+      <p>GPU runs the DCGAN and CNN training notebooks.</p>
+    </div>
+  </div>
+  <div class="workflow-step">
+    <span>03</span>
+    <div>
+      <strong>Copy checkpoints</strong>
+      <p>lung_dcgan.pth and lung_classifier.pth return locally.</p>
+    </div>
+  </div>
+  <div class="workflow-step">
+    <span>04</span>
+    <div>
+      <strong>Inspect</strong>
+      <p>Classify tissue images or generate synthetic sample grids.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

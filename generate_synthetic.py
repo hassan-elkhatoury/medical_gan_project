@@ -1,9 +1,9 @@
 """
-Generate class-organized synthetic images from a trained conditional DCGAN.
+Generate class-organized synthetic lung histopathology images from a trained conditional DCGAN.
 
 Example:
-    python generate_synthetic.py --checkpoint checkpoints/ham10000_dcgan.pth \
-        --match_real_dir data/ham10000/train --out_dir synthetic_images
+    python generate_synthetic.py --checkpoint checkpoints/lung_dcgan.pth \
+        --match_real_dir data/lung_cancer/train --out_dir synthetic_lung_images
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from pathlib import Path
 import torch
 from torchvision.utils import save_image
 
-from data import SkinLesionDataset, discover_class_names, set_seed
+from data import MedicalImageDataset, discover_class_names, set_seed
 from gan import ConditionalGenerator
 
 
@@ -36,7 +36,7 @@ def load_generator(checkpoint_path: str | Path, device: str) -> tuple[Conditiona
 
 
 def class_counts(real_dir: str | Path, class_names: list[str]) -> dict[str, int]:
-    dataset = SkinLesionDataset(real_dir, transform=None, class_names=class_names)
+    dataset = MedicalImageDataset(real_dir, transform=None, class_names=class_names)
     counts = {name: 0 for name in class_names}
     for label in dataset.labels:
         counts[class_names[label]] += 1
@@ -44,10 +44,10 @@ def class_counts(real_dir: str | Path, class_names: list[str]) -> dict[str, int]
 
 
 def generate_synthetic_images(
-    checkpoint: str | Path = "checkpoints/ham10000_dcgan.pth",
-    out_dir: str | Path = "synthetic_images",
+    checkpoint: str | Path = "checkpoints/lung_dcgan.pth",
+    out_dir: str | Path = "synthetic_lung_images",
     samples_per_class: int | None = None,
-    match_real_dir: str | Path | None = "data/ham10000/train",
+    match_real_dir: str | Path | None = "data/lung_cancer/train",
     batch_size: int = 64,
     seed: int = 42,
     device: str | None = None,
@@ -91,11 +91,11 @@ def generate_synthetic_images(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate synthetic HAM10000 images")
-    parser.add_argument("--checkpoint", default="checkpoints/ham10000_dcgan.pth")
-    parser.add_argument("--out_dir", default="synthetic_images")
+    parser = argparse.ArgumentParser(description="Generate synthetic lung histopathology images")
+    parser.add_argument("--checkpoint", default="checkpoints/lung_dcgan.pth")
+    parser.add_argument("--out_dir", default="synthetic_lung_images")
     parser.add_argument("--samples_per_class", type=int, default=None)
-    parser.add_argument("--match_real_dir", default="data/ham10000/train")
+    parser.add_argument("--match_real_dir", default="data/lung_cancer/train")
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()

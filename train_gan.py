@@ -1,8 +1,8 @@
 """
-Train a class-conditional DCGAN on prepared HAM10000 folders.
+Train a class-conditional DCGAN on prepared lung cancer histopathology folders.
 
 Example:
-    python train_gan.py --train_dir data/ham10000/train --epochs 50 --image_size 128
+    python train_gan.py --train_dir data/lung_cancer/train --epochs 50 --image_size 128
 """
 
 from __future__ import annotations
@@ -16,13 +16,14 @@ import torch
 from torch import nn, optim
 from torchvision.utils import save_image
 
-from data import SkinLesionDataset, build_transforms, discover_class_names, set_seed
+from data import MedicalImageDataset, build_transforms, discover_class_names, set_seed
 from gan import ConditionalDiscriminator, ConditionalGenerator, weights_init
 
 
 def train_gan(
     train_dir: str,
     output_dir: str = "checkpoints",
+    out_name: str = "lung_dcgan.pth",
     sample_dir: str = "generated_samples",
     epochs: int = 50,
     batch_size: int = 64,
@@ -48,7 +49,7 @@ def train_gan(
     print(f"Using device: {device}")
 
     class_names = discover_class_names(train_dir)
-    dataset = SkinLesionDataset(
+    dataset = MedicalImageDataset(
         train_dir,
         transform=build_transforms(image_size=image_size, augment=True),
         class_names=class_names,
@@ -148,18 +149,19 @@ def train_gan(
             "epoch": epoch,
             "history": history,
         }
-        torch.save(checkpoint, output_path / "ham10000_dcgan.pth")
+        torch.save(checkpoint, output_path / out_name)
         torch.save(checkpoint, output_path / "generator.pth")
 
     with (output_path / "gan_history.json").open("w", encoding="utf-8") as handle:
         json.dump(history, handle, indent=2)
-    return output_path / "ham10000_dcgan.pth"
+    return output_path / out_name
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train a conditional DCGAN")
-    parser.add_argument("--train_dir", default="data/ham10000/train")
+    parser.add_argument("--train_dir", default="data/lung_cancer/train")
     parser.add_argument("--out_dir", default="checkpoints")
+    parser.add_argument("--out_name", default="lung_dcgan.pth")
     parser.add_argument("--sample_dir", default="generated_samples")
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--batch_size", type=int, default=64)
@@ -175,6 +177,7 @@ def main() -> None:
     train_gan(
         train_dir=args.train_dir,
         output_dir=args.out_dir,
+        out_name=args.out_name,
         sample_dir=args.sample_dir,
         epochs=args.epochs,
         batch_size=args.batch_size,
